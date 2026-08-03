@@ -1,0 +1,72 @@
+<section class="shopping-list-needed">
+  <div class="section-header">
+    <h2>What to buy</h2>
+    <button type="button" class="secondary" (click)="load()">↻ Refresh</button>
+  </div>
+
+  @if (!loading && !error) {
+    <p class="summary" [class.all-good]="neededCount === 0">
+      @if (neededCount > 0) {
+        ⚠️ {{ neededCount }} product{{ neededCount === 1 ? '' : 's' }} need{{ neededCount === 1 ? 's' : '' }} restocking
+      } @else {
+        ✓ Everything is stocked up.
+      }
+    </p>
+  }
+
+  @if (loading) {
+    <p class="status">Loading...</p>
+  }
+
+  @if (error) {
+    <p class="status error">{{ error }}</p>
+  }
+
+  @if (!loading && !error) {
+    <div class="card table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Current</th>
+            <th>Minimum</th>
+            <th>To buy</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of entries; track entry.id) {
+            <tr [class.needs-buying]="entry.quantityToBuy > 0">
+              <td>{{ entry.name }}</td>
+              <td>{{ entry.currentQuantity }}{{ entry.unit ? ' ' + entry.unit : '' }}</td>
+              <td>{{ entry.minQuantity }}{{ entry.unit ? ' ' + entry.unit : '' }}</td>
+              <td>
+                @if (entry.quantityToBuy > 0) {
+                  <strong>{{ entry.quantityToBuy }}{{ entry.unit ? ' ' + entry.unit : '' }}</strong>
+                } @else {
+                  <span class="status">✓ Stocked</span>
+                }
+              </td>
+              <td class="row-actions">
+                @if (entry.quantityToBuy > 0) {
+                  <button
+                    type="button"
+                    class="primary"
+                    [disabled]="restockingId === entry.id"
+                    (click)="markBought(entry)"
+                  >
+                    {{ restockingId === entry.id ? 'Adding...' : '✓ Bought' }}
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty">Add products to your shopping list to see what you need to buy.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

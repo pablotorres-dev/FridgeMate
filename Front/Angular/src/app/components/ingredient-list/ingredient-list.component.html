@@ -1,0 +1,99 @@
+<section class="ingredient-list">
+  <header class="page-header">
+    <div>
+      <h1>Fridge &amp; Pantry Inventory</h1>
+      <p>Keep track of what's in your fridge, freezer and pantry.</p>
+    </div>
+    <button type="button" class="primary" (click)="toggleForm()">
+      {{ showForm ? 'Close' : '+ Add ingredient' }}
+    </button>
+  </header>
+
+  @if (expiringSoon.length > 0) {
+    <div class="expiring-banner">
+      <span>⏰ <strong>{{ expiringSoon.length }}</strong> item{{ expiringSoon.length === 1 ? '' : 's' }} expiring within 3 days:</span>
+      <span class="expiring-names">{{ expiringSoonNames }}</span>
+    </div>
+  }
+
+  @if (showForm) {
+    <app-ingredient-form
+      [ingredient]="editingIngredient"
+      (save)="saveIngredient($event)"
+      (cancel)="cancelEdit()"
+    />
+  }
+
+  <div class="filters">
+    <select [(ngModel)]="locationFilter" name="locationFilter">
+      <option value="">All locations</option>
+      @for (location of storageLocations; track location) {
+        <option [value]="location">{{ location }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="direction" name="direction">
+      <option value="asc">Expiration date: soonest first</option>
+      <option value="desc">Expiration date: latest first</option>
+    </select>
+
+    <button type="button" class="secondary" (click)="load()">Apply</button>
+  </div>
+
+  @if (loading) {
+    <p class="status">Loading...</p>
+  }
+
+  @if (error) {
+    <p class="status error">{{ error }}</p>
+  }
+
+  @if (!loading && !error) {
+    <div class="card table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>Type</th>
+            <th>Location</th>
+            <th>Expires</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ingredient of ingredients; track ingredient.id) {
+            <tr>
+              <td>{{ ingredient.name }}</td>
+              <td>{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</td>
+              <td>
+                @if (ingredient.type) {
+                  <span class="badge">{{ ingredient.type }}</span>
+                }
+              </td>
+              <td>
+                @if (ingredient.storageLocation) {
+                  <span class="badge badge-{{ ingredient.storageLocation.toLowerCase() }}">{{ ingredient.storageLocation }}</span>
+                }
+              </td>
+              <td>{{ ingredient.expirationDate || 'No expiration' }}</td>
+              <td class="row-actions">
+                @if (isTracked(ingredient)) {
+                  <span class="badge badge-tracked">✓ In shopping list</span>
+                } @else {
+                  <button type="button" class="secondary" (click)="addToShoppingList(ingredient)">🛒 Add to list</button>
+                }
+                <button type="button" class="secondary" (click)="editIngredient(ingredient)">Edit</button>
+                <button type="button" class="danger" (click)="deleteIngredient(ingredient.id)">Delete</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="empty">No ingredients registered yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

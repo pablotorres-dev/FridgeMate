@@ -1,0 +1,56 @@
+<section class="shopping-list-manage">
+  <div class="section-header">
+    <h2>Tracked products</h2>
+    <button type="button" class="primary" (click)="toggleForm()">
+      {{ showForm ? 'Close' : '+ Track a product' }}
+    </button>
+  </div>
+
+  @if (showForm) {
+    <app-shopping-list-item-form
+      [item]="editingItem"
+      (save)="saveItem($event)"
+      (cancel)="cancelEdit()"
+    />
+  }
+
+  @if (loading) {
+    <p class="status">Loading...</p>
+  }
+
+  @if (error) {
+    <p class="status error">{{ error }}</p>
+  }
+
+  @if (!loading && !error) {
+    <div class="card table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Unit</th>
+            <th>Min. quantity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items; track item.id) {
+            <tr>
+              <td>{{ item.name }}</td>
+              <td>{{ item.unit || '—' }}</td>
+              <td>{{ item.minQuantity != null ? item.minQuantity : 'Not set' }}</td>
+              <td class="row-actions">
+                <button type="button" class="secondary" (click)="editItem(item)">Edit</button>
+                <button type="button" class="danger" (click)="deleteItem(item.id)">Delete</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="empty">No tracked products yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

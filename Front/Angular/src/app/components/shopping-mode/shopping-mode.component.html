@@ -1,0 +1,132 @@
+<section class="shopping-mode">
+  <header class="page-header">
+    <h1>🛍️ Shop</h1>
+    <p>Check off what you're putting in the cart, then assign it to your fridge when you're done.</p>
+  </header>
+
+  @if (savedMessage) {
+    <p class="status success">{{ savedMessage }}</p>
+  }
+
+  @if (loading) {
+    <p class="status">Loading...</p>
+  }
+
+  @if (error) {
+    <p class="status error">{{ error }}</p>
+  }
+
+  @if (!loading && !error && phase === 'shopping') {
+    <div class="card list-card">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Name</th>
+            <th>Have</th>
+            <th>Need</th>
+            <th>Buying</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of cartItems; track $index) {
+            <tr [class.bought]="item.bought">
+              <td class="check-cell">
+                <input type="checkbox" [(ngModel)]="item.bought" />
+              </td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.currentQuantity != null ? item.currentQuantity + (item.unit ? ' ' + item.unit : '') : '—' }}</td>
+              <td>{{ item.minQuantity != null ? item.minQuantity + (item.unit ? ' ' + item.unit : '') : '—' }}</td>
+              <td>
+                <input type="number" min="0.01" step="any" [(ngModel)]="item.quantity" class="qty-input" />
+                {{ item.unit }}
+              </td>
+              <td class="row-actions">
+                @if (item.custom) {
+                  <button type="button" class="danger" (click)="removeItem(item)">✕</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="empty">Nothing to shop for right now — your shopping list is empty.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card add-item-card">
+      <h2>Add something not on the list</h2>
+      <div class="add-item-row">
+        <input type="text" placeholder="Product name" [(ngModel)]="newItemName" name="newItemName" />
+        <input type="text" placeholder="Unit (optional)" [(ngModel)]="newItemUnit" name="newItemUnit" />
+        <input type="number" min="0.01" step="any" [(ngModel)]="newItemQuantity" name="newItemQuantity" />
+        <button type="button" class="secondary" (click)="addCustomItem()">+ Add</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" [disabled]="boughtCount === 0" (click)="startReview()">
+        Finish shopping ({{ boughtCount }}) →
+      </button>
+    </div>
+  }
+
+  @if (!loading && phase === 'review') {
+    <div class="card list-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>Type</th>
+            <th>Storage</th>
+            <th>Expiration</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (draft of drafts; track $index) {
+            <tr>
+              <td>{{ draft.name }}</td>
+              <td>{{ draft.quantity }}{{ draft.unit ? ' ' + draft.unit : '' }}</td>
+              <td>
+                <select [(ngModel)]="draft.type">
+                  @for (productType of productTypes; track productType) {
+                    <option [value]="productType">{{ productType }}</option>
+                  }
+                </select>
+              </td>
+              <td>
+                <select [(ngModel)]="draft.storageLocation">
+                  @for (location of storageLocations; track location) {
+                    <option [value]="location">{{ location }}</option>
+                  }
+                </select>
+              </td>
+              <td>
+                <input type="date" [(ngModel)]="draft.expirationDate" />
+              </td>
+              <td class="row-actions">
+                <button type="button" class="danger" (click)="removeDraft(draft)">✕</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="empty">No purchases to review.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="secondary" (click)="backToShopping()">← Back to shopping</button>
+      <button type="button" class="primary" [disabled]="drafts.length === 0 || saving" (click)="saveAll()">
+        {{ saving ? 'Saving...' : 'Save to inventory' }}
+      </button>
+    </div>
+  }
+</section>

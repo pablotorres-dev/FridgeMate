@@ -1,0 +1,50 @@
+<form class="card ingredient-form" (ngSubmit)="submit()">
+  <h2>{{ isEditing ? 'Edit ingredient' : 'Add ingredient' }}</h2>
+
+  <div class="field-grid">
+    <label>
+      Name
+      <input type="text" [(ngModel)]="model.name" name="name" required />
+    </label>
+
+    <label>
+      Quantity
+      <input type="number" min="0.01" step="any" [(ngModel)]="model.quantity" name="quantity" required />
+    </label>
+
+    <label>
+      Unit <span class="optional">(optional)</span>
+      <input type="text" placeholder="e.g. kg, liters, units" [(ngModel)]="model.unit" name="unit" />
+    </label>
+
+    <label>
+      Type
+      <select [(ngModel)]="model.type" name="type" required>
+        @for (productType of productTypes; track productType) {
+          <option [value]="productType">{{ productType }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Storage location
+      <select [(ngModel)]="model.storageLocation" name="storageLocation" required>
+        @for (location of storageLocations; track location) {
+          <option [value]="location">{{ location }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Expiration date <span class="optional">(optional)</span>
+      <input type="date" [(ngModel)]="model.expirationDate" name="expirationDate" />
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit" class="primary">{{ isEditing ? 'Save changes' : 'Add ingredient' }}</button>
+    @if (isEditing) {
+      <button type="button" class="secondary" (click)="cancelEdit()">Cancel</button>
+    }
+  </div>
+</form>

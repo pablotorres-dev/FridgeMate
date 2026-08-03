@@ -1,0 +1,36 @@
+.shopping-list-item-form {
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.shopping-list-item-form h2 {
+  margin: 0 0 var(--space-4);
+  font-size: 1.1rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.optional {
+  font-weight: 400;
+  text-transform: none;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
