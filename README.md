@@ -35,7 +35,7 @@ FridgeMate started as a simple fridge inventory tracker and grew into a small ho
 
 **Backend**
 - Java 21, Spring Boot 4.1
-- Spring Data JPA + MySQL
+- Spring Data JPA — embedded H2 locally, PostgreSQL in production
 - Bean Validation (Jakarta Validation)
 - Lombok
 
@@ -67,12 +67,12 @@ FridgeCalories/
 
 - Java 21+
 - Node.js 18+ and npm
-- MySQL running locally
+
+No database server to install — the app runs on an embedded H2 database stored as a local file.
 
 ### Backend
 
-1. Create a MySQL database (defaults to `fridgeCalories`) and update the credentials in `Java/FridgeCalories/src/main/resources/application.properties` if needed.
-2. From `Java/FridgeCalories/`:
+1. From `Java/FridgeCalories/`:
 
    ```bash
    ./mvnw spring-boot:run
@@ -91,6 +91,13 @@ npm start
 
 The app runs on `http://localhost:4200` and expects the API at `http://localhost:8080`.
 
+## Deployment
+
+The app is packaged as a single deployable — the Angular build is bundled into the Spring Boot jar,
+so one service serves both the UI and the API on one URL, backed by managed PostgreSQL.
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the full guide.
+
 ## API overview
 
 | Method | Endpoint | Description |
@@ -108,5 +115,6 @@ The app runs on `http://localhost:4200` and expects the API at `http://localhost
 
 ## Roadmap
 
-- OpenAI integration for calorie estimation / recipe suggestions from what's in stock.
-- Deployment (backend + frontend + managed MySQL).
+- Barcode scanning to add products straight from the camera (in progress).
+- Nutrient tracking: log what gets consumed and estimate intake with AI.
+- OpenAI integration for recipe suggestions from what's in stock.

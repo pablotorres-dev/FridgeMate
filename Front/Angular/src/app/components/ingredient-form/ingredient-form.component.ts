@@ -36,7 +36,7 @@ export class IngredientFormComponent implements OnChanges {
   }
 
   get isEditing(): boolean {
-    return this.ingredient != null;
+    return this.ingredient?.id != null;
   }
 
   submit(): void {

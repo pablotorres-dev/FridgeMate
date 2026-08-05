@@ -2,15 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IngredientFormComponent } from '../ingredient-form/ingredient-form.component';
+import { BarcodeScannerComponent } from '../barcode-scanner/barcode-scanner.component';
 import { Ingredient } from '../../models/ingredient';
 import { STORAGE_LOCATIONS, StorageLocation } from '../../models/storage-location';
 import { IngredientService } from '../../services/ingredient.service';
 import { ShoppingListService } from '../../services/shopping-list.service';
+import { BarcodeLookupService } from '../../services/barcode-lookup.service';
 
 @Component({
   selector: 'app-ingredient-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, IngredientFormComponent],
+  imports: [CommonModule, FormsModule, IngredientFormComponent, BarcodeScannerComponent],
   templateUrl: './ingredient-list.component.html',
   styleUrl: './ingredient-list.component.css',
 })
@@ -21,6 +23,8 @@ export class IngredientListComponent implements OnInit {
   editingIngredient: Ingredient | null = null;
   trackedNames = new Set<string>();
   showForm = false;
+  showScanner = false;
+  scanMessage: string | null = null;
   expiringSoon: Ingredient[] = [];
 
   readonly storageLocations = STORAGE_LOCATIONS;
@@ -31,6 +35,7 @@ export class IngredientListComponent implements OnInit {
   constructor(
     private ingredientService: IngredientService,
     private shoppingListService: ShoppingListService,
+    private barcodeLookupService: BarcodeLookupService,
   ) {}
 
   ngOnInit(): void {
@@ -124,5 +129,29 @@ export class IngredientListComponent implements OnInit {
     this.shoppingListService
       .create({ name: ingredient.name, unit: ingredient.unit })
       .subscribe(() => this.trackedNames.add(ingredient.name.toLowerCase()));
+  }
+
+  openScanner(): void {
+    this.scanMessage = null;
+    this.showScanner = true;
+  }
+
+  onScanned(barcode: string): void {
+    this.showScanner = false;
+    this.barcodeLookupService.lookup(barcode).subscribe((product) => {
+      if (product) {
+        this.scanMessage = null;
+        this.editingIngredient = {
+          name: product.brand ? `${product.name} (${product.brand})` : product.name,
+          quantity: 1,
+          type: 'OTHER',
+          storageLocation: 'FRIDGE',
+        };
+      } else {
+        this.scanMessage = `No se encontró ningún producto para el código ${barcode}. Añádelo a mano.`;
+        this.editingIngredient = null;
+      }
+      this.showForm = true;
+    });
   }
 }

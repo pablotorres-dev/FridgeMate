@@ -129,3 +129,57 @@ select:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
+
+/* Responsive table: below the breakpoint, rows become stacked cards
+   instead of horizontally-scrolling table rows. Apply `class="responsive-table"`
+   to the <table>, and `data-label="Column name"` to each <td> whose value
+   should show a label (skip it on action/checkbox columns). */
+@media (max-width: 640px) {
+  table.responsive-table {
+    border: none;
+  }
+
+  table.responsive-table thead {
+    display: none;
+  }
+
+  table.responsive-table,
+  table.responsive-table tbody,
+  table.responsive-table tr,
+  table.responsive-table td {
+    display: block;
+    width: 100%;
+  }
+
+  table.responsive-table tr {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 8px solid var(--color-bg);
+  }
+
+  table.responsive-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+    border-bottom: none;
+    text-align: right;
+  }
+
+  table.responsive-table td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted);
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  table.responsive-table td.row-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    padding-top: var(--space-2);
+  }
+}

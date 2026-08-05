@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: fridgemate
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # Database credentials are entered in the Render dashboard, never committed.
+      # Expected format: jdbc:postgresql://<host>/<database>?sslmode=require
+      - key: JDBC_DATABASE_URL
+        sync: false
+      - key: JDBC_DATABASE_USERNAME
+        sync: false
+      - key: JDBC_DATABASE_PASSWORD
+        sync: false

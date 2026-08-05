@@ -1,0 +1,14 @@
+**/node_modules
+**/target
+**/dist
+**/.angular
+**/data
+**/*.mv.db
+**/*.trace.db
+**/*.lock.db
+.git
+.gitignore
+.idea
+.vscode
+.claude
+README.md

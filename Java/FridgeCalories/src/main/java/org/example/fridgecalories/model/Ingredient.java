@@ -28,14 +28,12 @@ public class Ingredient {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "VARCHAR(50)")
     private ProductType type;
 
     private LocalDate expirationDate;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "VARCHAR(50)")
     private StorageLocation storageLocation;
 
     @Column(updatable = false)

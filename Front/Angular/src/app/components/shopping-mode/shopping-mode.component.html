@@ -18,7 +18,7 @@
 
   @if (!loading && !error && phase === 'shopping') {
     <div class="card list-card">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th></th>
@@ -32,13 +32,13 @@
         <tbody>
           @for (item of cartItems; track $index) {
             <tr [class.bought]="item.bought">
-              <td class="check-cell">
+              <td class="check-cell" data-label="Bought">
                 <input type="checkbox" [(ngModel)]="item.bought" />
               </td>
-              <td>{{ item.name }}</td>
-              <td>{{ item.currentQuantity != null ? item.currentQuantity + (item.unit ? ' ' + item.unit : '') : '—' }}</td>
-              <td>{{ item.minQuantity != null ? item.minQuantity + (item.unit ? ' ' + item.unit : '') : '—' }}</td>
-              <td>
+              <td data-label="Name">{{ item.name }}</td>
+              <td data-label="Have">{{ item.currentQuantity != null ? item.currentQuantity + (item.unit ? ' ' + item.unit : '') : '—' }}</td>
+              <td data-label="Need">{{ item.minQuantity != null ? item.minQuantity + (item.unit ? ' ' + item.unit : '') : '—' }}</td>
+              <td data-label="Buying">
                 <input type="number" min="0.01" step="any" [(ngModel)]="item.quantity" class="qty-input" />
                 {{ item.unit }}
               </td>
@@ -76,7 +76,7 @@
 
   @if (!loading && phase === 'review') {
     <div class="card list-card">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -90,23 +90,23 @@
         <tbody>
           @for (draft of drafts; track $index) {
             <tr>
-              <td>{{ draft.name }}</td>
-              <td>{{ draft.quantity }}{{ draft.unit ? ' ' + draft.unit : '' }}</td>
-              <td>
+              <td data-label="Name">{{ draft.name }}</td>
+              <td data-label="Quantity">{{ draft.quantity }}{{ draft.unit ? ' ' + draft.unit : '' }}</td>
+              <td data-label="Type">
                 <select [(ngModel)]="draft.type">
                   @for (productType of productTypes; track productType) {
                     <option [value]="productType">{{ productType }}</option>
                   }
                 </select>
               </td>
-              <td>
+              <td data-label="Storage">
                 <select [(ngModel)]="draft.storageLocation">
                   @for (location of storageLocations; track location) {
                     <option [value]="location">{{ location }}</option>
                   }
                 </select>
               </td>
-              <td>
+              <td data-label="Expiration">
                 <input type="date" [(ngModel)]="draft.expirationDate" />
               </td>
               <td class="row-actions">

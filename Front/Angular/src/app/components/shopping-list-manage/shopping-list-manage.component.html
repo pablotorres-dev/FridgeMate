@@ -24,7 +24,7 @@
 
   @if (!loading && !error) {
     <div class="card table-card">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -36,9 +36,9 @@
         <tbody>
           @for (item of items; track item.id) {
             <tr>
-              <td>{{ item.name }}</td>
-              <td>{{ item.unit || '—' }}</td>
-              <td>{{ item.minQuantity != null ? item.minQuantity : 'Not set' }}</td>
+              <td data-label="Name">{{ item.name }}</td>
+              <td data-label="Unit">{{ item.unit || '—' }}</td>
+              <td data-label="Min. quantity">{{ item.minQuantity != null ? item.minQuantity : 'Not set' }}</td>
               <td class="row-actions">
                 <button type="button" class="secondary" (click)="editItem(item)">Edit</button>
                 <button type="button" class="danger" (click)="deleteItem(item.id)">Delete</button>

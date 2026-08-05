@@ -4,10 +4,21 @@
       <h1>Fridge &amp; Pantry Inventory</h1>
       <p>Keep track of what's in your fridge, freezer and pantry.</p>
     </div>
-    <button type="button" class="primary" (click)="toggleForm()">
-      {{ showForm ? 'Close' : '+ Add ingredient' }}
-    </button>
+    <div class="header-actions">
+      <button type="button" class="secondary" (click)="openScanner()">📷 Scan barcode</button>
+      <button type="button" class="primary" (click)="toggleForm()">
+        {{ showForm ? 'Close' : '+ Add ingredient' }}
+      </button>
+    </div>
   </header>
+
+  @if (showScanner) {
+    <app-barcode-scanner (scanned)="onScanned($event)" (closed)="showScanner = false" />
+  }
+
+  @if (scanMessage) {
+    <p class="status scan-message">{{ scanMessage }}</p>
+  }
 
   @if (expiringSoon.length > 0) {
     <div class="expiring-banner">
@@ -50,7 +61,7 @@
 
   @if (!loading && !error) {
     <div class="card table-card">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -64,19 +75,19 @@
         <tbody>
           @for (ingredient of ingredients; track ingredient.id) {
             <tr>
-              <td>{{ ingredient.name }}</td>
-              <td>{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</td>
-              <td>
+              <td data-label="Name">{{ ingredient.name }}</td>
+              <td data-label="Quantity">{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</td>
+              <td data-label="Type">
                 @if (ingredient.type) {
                   <span class="badge">{{ ingredient.type }}</span>
                 }
               </td>
-              <td>
+              <td data-label="Location">
                 @if (ingredient.storageLocation) {
                   <span class="badge badge-{{ ingredient.storageLocation.toLowerCase() }}">{{ ingredient.storageLocation }}</span>
                 }
               </td>
-              <td>{{ ingredient.expirationDate || 'No expiration' }}</td>
+              <td data-label="Expires">{{ ingredient.expirationDate || 'No expiration' }}</td>
               <td class="row-actions">
                 @if (isTracked(ingredient)) {
                   <span class="badge badge-tracked">✓ In shopping list</span>

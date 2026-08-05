@@ -1,0 +1,25 @@
+<div class="scanner-overlay">
+  <div class="scanner-panel">
+    <div class="scanner-header">
+      <h2>📷 Scan a barcode</h2>
+      <button type="button" class="secondary" (click)="close()">✕ Close</button>
+    </div>
+
+    @if (error) {
+      <p class="status error">{{ error }}</p>
+    } @else {
+      <p class="hint">{{ status }}</p>
+      <p class="tips">Consejo: unos 10-15 cm de distancia, código plano y bien iluminado, sujeta el móvil quieto.</p>
+    }
+
+    <div class="video-wrapper">
+      <video #video class="scanner-video" autoplay muted playsinline></video>
+      <div class="scan-guide"></div>
+      @if (torchAvailable) {
+        <button type="button" class="secondary torch-button" (click)="toggleTorch()">
+          {{ torchOn ? '🔦 Apagar linterna' : '🔦 Linterna' }}
+        </button>
+      }
+    </div>
+  </div>
+</div>
