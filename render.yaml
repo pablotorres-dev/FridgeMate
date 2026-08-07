@@ -4,6 +4,8 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
+    # Keep the app in Europe, close to the database.
+    region: frankfurt
     healthCheckPath: /
     envVars:
       - key: SPRING_PROFILES_ACTIVE
@@ -16,3 +18,7 @@ services:
         sync: false
       - key: JDBC_DATABASE_PASSWORD
         sync: false
+      # Signs the auth tokens. Generated once and kept stable — changing it
+      # invalidates every session and signs all users out.
+      - key: JWT_SECRET
+        generateValue: true

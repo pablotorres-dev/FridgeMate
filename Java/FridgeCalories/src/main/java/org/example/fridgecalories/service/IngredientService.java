@@ -2,6 +2,7 @@ package org.example.fridgecalories.service;
 
 import org.example.fridgecalories.model.Ingredient;
 import org.example.fridgecalories.model.StorageLocation;
+import org.example.fridgecalories.model.User;
 import org.example.fridgecalories.repository.IngredientRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -14,23 +15,29 @@ import java.util.List;
 public class IngredientService {
 
     private final IngredientRepository repository;
+    private final AuthService authService;
 
-    public IngredientService(IngredientRepository repository) {
+    public IngredientService(IngredientRepository repository, AuthService authService) {
         this.repository = repository;
+        this.authService = authService;
     }
 
     public List<Ingredient> getAll(StorageLocation location, String direction) {
+        User user = authService.currentUser();
         Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(new Sort.Order(sortDirection, "expirationDate").nullsLast());
         if (location != null) {
-            return repository.findByStorageLocation(location, sort);
+            return repository.findByUserAndStorageLocation(user, location, sort);
         }
-        return repository.findAll(sort);
+        return repository.findByUser(user, sort);
     }
 
     public Ingredient save(Ingredient ingredient) {
-        return repository.findByNameIgnoreCaseAndUnitAndStorageLocationAndExpirationDate(
-                        ingredient.getName(), ingredient.getUnit(), ingredient.getStorageLocation(),
+        User user = authService.currentUser();
+        // Ownership comes from the session, never from the request body.
+        ingredient.setUser(user);
+        return repository.findByUserAndNameIgnoreCaseAndUnitAndStorageLocationAndExpirationDate(
+                        user, ingredient.getName(), ingredient.getUnit(), ingredient.getStorageLocation(),
                         ingredient.getExpirationDate())
                 .map(existing -> mergeIntoExisting(existing, ingredient))
                 .orElseGet(() -> repository.save(ingredient));
@@ -42,8 +49,7 @@ public class IngredientService {
     }
 
     public Ingredient update(Long id, Ingredient updated) {
-        Ingredient existing = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingredient not found"));
+        Ingredient existing = requireOwned(id);
         existing.setName(updated.getName());
         existing.setQuantity(updated.getQuantity());
         existing.setUnit(updated.getUnit());
@@ -54,10 +60,19 @@ public class IngredientService {
     }
 
     public void delete(Long id) {
-        repository.deleteById(id);
+        repository.delete(requireOwned(id));
     }
 
     public List<Ingredient> getExpiringSoon() {
-        return repository.findByExpirationDateBefore(LocalDate.now().plusDays(3));
+        return repository.findByUserAndExpirationDateBefore(authService.currentUser(), LocalDate.now().plusDays(3));
+    }
+
+    /**
+     * Someone else's ingredient is reported as missing rather than forbidden, so
+     * the response can't be used to probe which ids exist.
+     */
+    private Ingredient requireOwned(Long id) {
+        return repository.findByIdAndUser(id, authService.currentUser())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingredient not found"));
     }
 }

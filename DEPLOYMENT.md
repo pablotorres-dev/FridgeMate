@@ -52,9 +52,25 @@ empty, working database.
 | `JDBC_DATABASE_URL`      | yes      | JDBC connection URL for the PostgreSQL database.          |
 | `JDBC_DATABASE_USERNAME` | yes      | Database user.                                            |
 | `JDBC_DATABASE_PASSWORD` | yes      | Database password.                                        |
+| `JWT_SECRET`             | yes      | Signing key for auth tokens. At least 32 characters.      |
 | `PORT`                   | no       | Injected by Render; defaults to `8080` locally.           |
 
 Nothing sensitive is stored in the repository — all credentials come from the environment.
+
+> **About `JWT_SECRET`:** use Render's **Generate** button rather than inventing one, and
+> then leave it alone. Every session token is signed with this key, so changing it signs
+> every user out. The app refuses to start if it is missing.
+
+## The demo account
+
+On first start the app seeds a `demo` account (password `demo1234`) with a realistic
+kitchen — items about to expire, a stocked pantry, and a shopping list with some products
+short of their target. The login screen has an **Explore the demo** button that signs into
+it in one click, so anyone can look around without registering.
+
+Expiry dates are stored relative to the current date, so the demo still looks current
+whenever it is opened. Seeding only runs when the account doesn't exist yet, so restarts
+never duplicate or reset it.
 
 ---
 

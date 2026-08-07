@@ -1,0 +1,55 @@
+<section class="login-page">
+  <div class="card login-card">
+    <header class="login-header">
+      <h1>🧊 FridgeMate</h1>
+      <p>Keep track of what's in your fridge, freezer and pantry.</p>
+    </header>
+
+    <form (ngSubmit)="submit()">
+      <label>
+        Username
+        <input
+          type="text"
+          name="username"
+          autocomplete="username"
+          [(ngModel)]="username"
+          required
+        />
+      </label>
+
+      <label>
+        Password
+        <input
+          type="password"
+          name="password"
+          [autocomplete]="isRegister ? 'new-password' : 'current-password'"
+          [(ngModel)]="password"
+          required
+        />
+      </label>
+
+      @if (error) {
+        <p class="status error">{{ error }}</p>
+      }
+
+      <button type="submit" class="primary block" [disabled]="submitting">
+        {{ submitting ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in' }}
+      </button>
+    </form>
+
+    <p class="switch">
+      {{ isRegister ? 'Already have an account?' : "Don't have an account?" }}
+      <button type="button" class="link" (click)="switchMode()">
+        {{ isRegister ? 'Sign in' : 'Create one' }}
+      </button>
+    </p>
+
+    <div class="demo">
+      <span class="divider">or</span>
+      <button type="button" class="secondary block" [disabled]="submitting" (click)="useDemoAccount()">
+        👀 Explore the demo
+      </button>
+      <p class="demo-hint">Opens a sample kitchen with data already in it — no sign-up needed.</p>
+    </div>
+  </div>
+</section>

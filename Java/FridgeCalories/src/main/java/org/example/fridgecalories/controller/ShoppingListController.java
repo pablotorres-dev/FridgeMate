@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/shopping-list")
-@CrossOrigin(originPatterns = {"http://localhost:4200", "http://192.168.*.*:4200", "https://192.168.*.*:4200"})
 public class ShoppingListController {
 
     private final ShoppingListService service;

@@ -23,6 +23,7 @@ FridgeMate started as a simple fridge inventory tracker and grew into a small ho
 
 ## Features
 
+- **Accounts** — register and sign in; each user only ever sees their own kitchen. Sessions are kept in a signed, HttpOnly cookie, so you stay signed in between visits without the token ever being exposed to JavaScript.
 - **Inventory management** — full CRUD for ingredients/products with name, quantity, unit, type, storage location and optional expiration date.
 - **Smart duplicate handling** — adding the same product (same name, unit, location and expiration date) automatically merges quantities instead of creating duplicate rows.
 - **Expiring-soon alerts** — a banner on the inventory page flags anything expiring within 3 days.
@@ -35,6 +36,7 @@ FridgeMate started as a simple fridge inventory tracker and grew into a small ho
 
 **Backend**
 - Java 21, Spring Boot 4.1
+- Spring Security with JWT in an HttpOnly cookie
 - Spring Data JPA — embedded H2 locally, PostgreSQL in production
 - Bean Validation (Jakarta Validation)
 - Lombok
@@ -100,8 +102,15 @@ See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the full guide.
 
 ## API overview
 
+All `/api/**` endpoints except `/api/auth/**` require a signed-in session, and only ever
+return data belonging to that account.
+
 | Method | Endpoint | Description |
 | --- | --- | --- |
+| `POST` | `/api/auth/register` | Create an account and sign in |
+| `POST` | `/api/auth/login` | Sign in |
+| `POST` | `/api/auth/logout` | Sign out |
+| `GET` | `/api/auth/me` | The current account, or 401 if signed out |
 | `GET` | `/api/ingredients` | List ingredients (optional `location`, `direction` filters) |
 | `GET` | `/api/ingredients/expiring` | Ingredients expiring within 3 days |
 | `POST` | `/api/ingredients` | Add an ingredient (merges into an existing matching row) |
