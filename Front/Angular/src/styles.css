@@ -192,6 +192,18 @@ select:focus {
     display: none;
   }
 
+  /* Self-describing values like badges flow onto a shared line instead of
+     taking a labelled row each, which keeps the card short. */
+  table.responsive-table td.card-inline {
+    display: inline-flex;
+    width: auto;
+    padding-right: var(--space-2);
+  }
+
+  table.responsive-table td.card-inline::before {
+    display: none;
+  }
+
   /* Actions sit under a divider and share the width evenly, which keeps
      them thumb-sized without stacking into a tall column. */
   table.responsive-table td.row-actions {

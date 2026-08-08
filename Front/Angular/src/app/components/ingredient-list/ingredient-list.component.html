@@ -41,20 +41,20 @@
     />
   }
 
+  <!-- Applied as soon as a choice changes: an extra "Apply" tap is friction on
+       a phone, and the list is small enough to refresh instantly. -->
   <div class="filters">
-    <select [(ngModel)]="locationFilter" name="locationFilter">
+    <select [(ngModel)]="locationFilter" name="locationFilter" (ngModelChange)="load()">
       <option value="">All locations</option>
       @for (location of storageLocations; track location) {
         <option [value]="location">{{ location }}</option>
       }
     </select>
 
-    <select [(ngModel)]="direction" name="direction">
-      <option value="asc">Expiration date: soonest first</option>
-      <option value="desc">Expiration date: latest first</option>
+    <select [(ngModel)]="direction" name="direction" (ngModelChange)="load()">
+      <option value="asc">Expiring soonest first</option>
+      <option value="desc">Expiring latest first</option>
     </select>
-
-    <button type="button" class="secondary" (click)="load()">Apply</button>
   </div>
 
   @if (loading) {
@@ -83,12 +83,12 @@
             <tr>
               <td class="card-title" data-label="Name">{{ ingredient.name }}</td>
               <td data-label="Quantity">{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</td>
-              <td data-label="Type">
+              <td class="card-inline" data-label="Type">
                 @if (ingredient.type) {
                   <span class="badge">{{ ingredient.type }}</span>
                 }
               </td>
-              <td data-label="Location">
+              <td class="card-inline" data-label="Location">
                 @if (ingredient.storageLocation) {
                   <span class="badge badge-{{ ingredient.storageLocation.toLowerCase() }}">{{ ingredient.storageLocation }}</span>
                 }

@@ -178,14 +178,15 @@ tbody tr:hover {
     flex: 1;
   }
 
+  /* Both dropdowns share one row; without the Apply button they fit. */
   .filters {
     gap: var(--space-2);
+    flex-wrap: nowrap;
   }
 
-  /* Full width: the sort labels are far too long to sit side by side here. */
-  .filters select,
-  .filters button {
-    width: 100%;
+  .filters select {
+    flex: 1;
+    min-width: 0;
   }
 
   .expiring-banner {
