@@ -37,7 +37,7 @@
         <tbody>
           @for (entry of entries; track entry.id) {
             <tr [class.needs-buying]="entry.quantityToBuy > 0">
-              <td data-label="Name">{{ entry.name }}</td>
+              <td class="card-title" data-label="Name">{{ entry.name }}</td>
               <td data-label="Current">{{ entry.currentQuantity }}{{ entry.unit ? ' ' + entry.unit : '' }}</td>
               <td data-label="Minimum">{{ entry.minQuantity }}{{ entry.unit ? ' ' + entry.unit : '' }}</td>
               <td data-label="To buy">

@@ -118,3 +118,57 @@ tr.bought {
   gap: var(--space-2);
   justify-content: flex-end;
 }
+
+@media (max-width: 640px) {
+  .shopping-mode {
+    padding: var(--space-4) var(--space-3) var(--space-6);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .page-header h1 {
+    font-size: 1.35rem;
+  }
+
+  .page-header p {
+    font-size: 0.85rem;
+  }
+
+  /* One field per line: three inputs and a button never fit across a phone. */
+  .add-item-row {
+    flex-direction: column;
+  }
+
+  .add-item-row input,
+  .add-item-row button {
+    width: 100%;
+  }
+
+  /* The checkbox is the primary action while shopping, so it gets its own
+     full-width row with a label instead of a cramped corner cell. */
+  .check-cell {
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding-bottom: var(--space-2);
+  }
+
+  .check-cell input {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  .qty-input {
+    width: 6rem;
+  }
+
+  /* Wizard controls are the page's main action — full width, easy to hit. */
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+}

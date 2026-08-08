@@ -89,3 +89,19 @@ tr.needs-buying:hover {
   opacity: 0.6;
   cursor: default;
 }
+
+@media (max-width: 640px) {
+  .section-header h2 {
+    font-size: 1.05rem;
+  }
+
+  .summary {
+    font-size: 0.9rem;
+  }
+
+  /* Rows already met need no action, so their empty cell would otherwise
+     leave a stray divider and dead space under the card. */
+  td.row-actions:empty {
+    display: none;
+  }
+}

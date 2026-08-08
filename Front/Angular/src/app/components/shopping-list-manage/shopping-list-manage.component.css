@@ -68,3 +68,15 @@ tbody tr:hover {
   gap: var(--space-2);
   justify-content: flex-end;
 }
+
+@media (max-width: 640px) {
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .section-header h2 {
+    font-size: 1.05rem;
+  }
+}

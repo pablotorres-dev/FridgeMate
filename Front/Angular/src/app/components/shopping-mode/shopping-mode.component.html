@@ -35,7 +35,7 @@
               <td class="check-cell" data-label="Bought">
                 <input type="checkbox" [(ngModel)]="item.bought" />
               </td>
-              <td data-label="Name">{{ item.name }}</td>
+              <td class="card-title" data-label="Name">{{ item.name }}</td>
               <td data-label="Have">{{ item.currentQuantity != null ? item.currentQuantity + (item.unit ? ' ' + item.unit : '') : '—' }}</td>
               <td data-label="Need">{{ item.minQuantity != null ? item.minQuantity + (item.unit ? ' ' + item.unit : '') : '—' }}</td>
               <td data-label="Buying">
@@ -90,7 +90,7 @@
         <tbody>
           @for (draft of drafts; track $index) {
             <tr>
-              <td data-label="Name">{{ draft.name }}</td>
+              <td class="card-title" data-label="Name">{{ draft.name }}</td>
               <td data-label="Quantity">{{ draft.quantity }}{{ draft.unit ? ' ' + draft.unit : '' }}</td>
               <td data-label="Type">
                 <select [(ngModel)]="draft.type">

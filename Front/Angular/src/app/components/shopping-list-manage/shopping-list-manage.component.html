@@ -36,7 +36,7 @@
         <tbody>
           @for (item of items; track item.id) {
             <tr>
-              <td data-label="Name">{{ item.name }}</td>
+              <td class="card-title" data-label="Name">{{ item.name }}</td>
               <td data-label="Unit">{{ item.unit || '—' }}</td>
               <td data-label="Min. quantity">{{ item.minQuantity != null ? item.minQuantity : 'Not set' }}</td>
               <td class="row-actions">

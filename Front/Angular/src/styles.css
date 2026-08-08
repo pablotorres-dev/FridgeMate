@@ -153,7 +153,7 @@ select:focus {
 
   table.responsive-table tr {
     padding: var(--space-3) var(--space-4);
-    border-bottom: 8px solid var(--color-bg);
+    border-bottom: 6px solid var(--color-bg);
   }
 
   table.responsive-table td {
@@ -161,15 +161,16 @@ select:focus {
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    padding: var(--space-1) 0;
+    padding: 0.15rem 0;
     border-bottom: none;
     text-align: right;
+    font-size: 0.9rem;
   }
 
   table.responsive-table td[data-label]::before {
     content: attr(data-label);
     font-weight: 600;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--color-text-muted);
@@ -177,9 +178,47 @@ select:focus {
     flex-shrink: 0;
   }
 
+  /* The name reads as the card's heading, so it needs no label and gets
+     the full width rather than being squeezed into a label/value pair. */
+  table.responsive-table td.card-title {
+    display: block;
+    text-align: left;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 0 0 var(--space-2);
+  }
+
+  table.responsive-table td.card-title::before {
+    display: none;
+  }
+
+  /* Actions sit under a divider and share the width evenly, which keeps
+     them thumb-sized without stacking into a tall column. */
   table.responsive-table td.row-actions {
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    padding-top: var(--space-2);
+    justify-content: stretch;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+
+  table.responsive-table td.row-actions > * {
+    flex: 1;
+    text-align: center;
+  }
+
+  table.responsive-table td.row-actions .badge {
+    align-self: center;
+    padding-block: 0.5rem;
+  }
+
+  /* Comfortable touch targets — small desktop-sized buttons are hard to hit. */
+  button {
+    min-height: 44px;
+  }
+
+  table.responsive-table td.row-actions button {
+    padding-inline: var(--space-2);
   }
 }

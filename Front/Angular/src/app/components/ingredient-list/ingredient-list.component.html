@@ -12,8 +12,14 @@
     </div>
   </header>
 
-  @if (showScanner) {
-    <app-barcode-scanner (scanned)="onScanned($event)" (closed)="showScanner = false" />
+  <!-- Deferred so the barcode-decoding library, by far the heaviest dependency,
+       is only fetched when the camera is actually opened. -->
+  @defer (when showScanner) {
+    @if (showScanner) {
+      <app-barcode-scanner (scanned)="onScanned($event)" (closed)="showScanner = false" />
+    }
+  } @loading (minimum 300ms) {
+    <p class="status scan-message">📷 Opening the camera…</p>
   }
 
   @if (scanMessage) {
@@ -75,7 +81,7 @@
         <tbody>
           @for (ingredient of ingredients; track ingredient.id) {
             <tr>
-              <td data-label="Name">{{ ingredient.name }}</td>
+              <td class="card-title" data-label="Name">{{ ingredient.name }}</td>
               <td data-label="Quantity">{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</td>
               <td data-label="Type">
                 @if (ingredient.type) {
