@@ -77,7 +77,9 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
             @Value("${app.gemini.api-key:}") String apiKey,
             @Value("${app.gemini.model:gemini-2.0-flash}") String model,
             ObjectMapper objectMapper) {
-        this.apiKey = apiKey;
+        // Trimmed because a key pasted into a hosting dashboard often carries a
+        // trailing space or newline, which the API rejects as an invalid key.
+        this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.objectMapper = objectMapper;
         // Built once, and as a URI rather than a template string: passing the
         // base URL as a template variable would percent-encode "https://" and
