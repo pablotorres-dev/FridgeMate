@@ -24,4 +24,18 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=backend /app/target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Tuned for a small, CPU-starved container that is stopped when idle, so
+# startup time is what the visitor actually feels:
+#   TieredStopAtLevel=1  skip the expensive optimising JIT — this process is
+#                        short-lived and dominated by class loading, not by
+#                        long-running hot code.
+#   UseSerialGC          the parallel collectors cost more to set up than they
+#                        can repay on a single small core.
+#   MaxRAMPercentage     use the container's memory limit instead of the JVM's
+#                        conservative default guess.
+ENTRYPOINT ["java", \
+  "-XX:TieredStopAtLevel=1", \
+  "-XX:+UseSerialGC", \
+  "-XX:MaxRAMPercentage=75", \
+  "-jar", "app.jar"]
