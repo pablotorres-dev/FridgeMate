@@ -1,0 +1,180 @@
+.nutrition {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-6);
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.page-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.page-header p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+.status {
+  color: var(--color-text-muted);
+}
+
+.status.error {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.status.notice {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+.placeholder,
+.summary-card {
+  padding: var(--space-4) var(--space-5);
+}
+
+.summary {
+  margin: 0;
+}
+
+.calories {
+  margin: var(--space-3) 0 0;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+}
+
+.macro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+}
+
+.macro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.macro-name {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.macro-amount {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.table-card {
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+}
+
+td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef2f7;
+}
+
+/* Coverage reads at a glance: short on it, getting there, well covered. */
+.level-low {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.level-moderate {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.level-good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.gaps {
+  margin: 0;
+  padding: var(--space-4) var(--space-5) var(--space-4) calc(var(--space-5) + 1rem);
+}
+
+.gaps li + li {
+  margin-top: var(--space-2);
+}
+
+.disclaimer {
+  margin-top: var(--space-5);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .nutrition {
+    padding: var(--space-4) var(--space-3) var(--space-6);
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .page-header h1 {
+    font-size: 1.35rem;
+  }
+
+  .page-header p {
+    font-size: 0.85rem;
+  }
+
+  .page-header button {
+    width: 100%;
+  }
+}

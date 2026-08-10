@@ -31,4 +31,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/shopping-mode/shopping-mode.component').then((m) => m.ShoppingModeComponent),
   },
+  {
+    path: 'nutrition',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/nutrition/nutrition.component').then((m) => m.NutritionComponent),
+  },
 ];

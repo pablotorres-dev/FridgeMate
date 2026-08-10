@@ -1,0 +1,92 @@
+<section class="nutrition">
+  <header class="page-header">
+    <div>
+      <h1>🥗 Nutrition</h1>
+      <p>What your kitchen currently covers, and what it doesn't.</p>
+    </div>
+    @if (available) {
+      <button type="button" class="primary" [disabled]="loading" (click)="analyse()">
+        {{ loading ? 'Analysing…' : report ? 'Analyse again' : 'Analyse my kitchen' }}
+      </button>
+    }
+  </header>
+
+  @if (!available) {
+    <p class="status notice">
+      Nutrition analysis isn't switched on for this server. It needs an AI provider key to be configured.
+    </p>
+  }
+
+  @if (error) {
+    <p class="status error">{{ error }}</p>
+  }
+
+  @if (loading) {
+    <div class="card placeholder">
+      <p class="status">Reading through your inventory… this takes a few seconds.</p>
+    </div>
+  }
+
+  @if (report && !loading) {
+    <div class="card summary-card">
+      <p class="summary">{{ report.summary }}</p>
+      @if (report.totalCalories) {
+        <p class="calories"><strong>{{ report.totalCalories | number }}</strong> kcal in total</p>
+      }
+    </div>
+
+    @if (report.macros.length) {
+      <h2>Macronutrients</h2>
+      <div class="card macro-grid">
+        @for (macro of report.macros; track macro.name) {
+          <div class="macro">
+            <span class="macro-name">{{ macro.name }}</span>
+            <span class="macro-amount">{{ macro.amount }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (report.micronutrients.length) {
+      <h2>Vitamins &amp; minerals</h2>
+      <div class="card table-card">
+        <table class="responsive-table">
+          <thead>
+            <tr>
+              <th>Nutrient</th>
+              <th>Amount</th>
+              <th>Coverage</th>
+              <th>Mainly from</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of report.micronutrients; track item.name) {
+              <tr>
+                <td class="card-title" data-label="Nutrient">{{ item.name }}</td>
+                <td data-label="Amount">{{ item.amount }}</td>
+                <td data-label="Coverage">
+                  <span class="badge" [class]="levelClass(item.level)">{{ item.level }}</span>
+                </td>
+                <td data-label="Mainly from">{{ item.sources.join(', ') }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (report.gaps.length) {
+      <h2>Worth picking up</h2>
+      <ul class="card gaps">
+        @for (gap of report.gaps; track gap) {
+          <li>{{ gap }}</li>
+        }
+      </ul>
+    }
+
+    <p class="disclaimer">
+      These figures are rough estimates worked out from product names, not measurements.
+      Treat them as a rough guide, not as dietary advice.
+    </p>
+  }
+</section>

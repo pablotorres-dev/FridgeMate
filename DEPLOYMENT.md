@@ -53,6 +53,7 @@ empty, working database.
 | `JDBC_DATABASE_USERNAME` | yes      | Database user.                                            |
 | `JDBC_DATABASE_PASSWORD` | yes      | Database password.                                        |
 | `JWT_SECRET`             | yes      | Signing key for auth tokens. At least 32 characters.      |
+| `GEMINI_API_KEY`         | no       | Enables the nutrition analysis page. Without it the feature reports itself as unavailable and the rest of the app is unaffected. |
 | `PORT`                   | no       | Injected by Render; defaults to `8080` locally.           |
 
 Nothing sensitive is stored in the repository — all credentials come from the environment.

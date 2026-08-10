@@ -97,10 +97,13 @@
     white-space: nowrap;
   }
 
+  /* Four sections rarely fit across a phone, so they centre and wrap onto a
+     second line rather than being pushed off the edge. */
   .nav-links {
     grid-area: links;
-    justify-content: space-between;
-    gap: var(--space-2);
-    font-size: 0.9rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1) var(--space-3);
+    font-size: 0.85rem;
   }
 }

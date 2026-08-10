@@ -31,6 +31,7 @@ FridgeMate started as a simple fridge inventory tracker and grew into a small ho
 - **"What to buy" view** — automatically computed from your current inventory vs. your stock targets, with a one-click "Bought" button that restocks straight into inventory (reusing the last known type/location for that product).
 - **Shopping Mode** — a two-step checkout-style flow for restocking: check off what's in the cart (including impulse buys not on the list) while shopping, then review and assign storage details for everything at once.
 - **Filtering & sorting** — filter inventory by storage location, sort by expiration date.
+- **Nutrition analysis** — an AI estimate of the calories, macronutrients and micronutrients your kitchen currently holds, which items supply them, and what it's short on. Results are cached until the inventory changes, so a page refresh costs nothing.
 
 ## Tech stack
 
@@ -121,9 +122,10 @@ return data belonging to that account.
 | `POST` | `/api/shopping-list` | Track a new product |
 | `PUT` | `/api/shopping-list/{id}` | Update a tracked product |
 | `DELETE` | `/api/shopping-list/{id}` | Stop tracking a product |
+| `GET` | `/api/nutrition` | AI nutrition estimate for the current inventory |
+| `GET` | `/api/nutrition/status` | Whether nutrition analysis is configured |
 
 ## Roadmap
 
-- Barcode scanning to add products straight from the camera (in progress).
-- Nutrient tracking: log what gets consumed and estimate intake with AI.
-- OpenAI integration for recipe suggestions from what's in stock.
+- Recipe suggestions from what's currently in stock.
+- Track what gets consumed over time, rather than only what's in the kitchen now.
