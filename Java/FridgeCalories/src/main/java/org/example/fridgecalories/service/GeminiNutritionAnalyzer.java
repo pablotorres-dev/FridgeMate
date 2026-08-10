@@ -10,10 +10,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +69,7 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
             """;
 
     private final String apiKey;
-    private final String model;
+    private final URI endpoint;
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
@@ -76,8 +78,11 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
             @Value("${app.gemini.model:gemini-2.0-flash}") String model,
             ObjectMapper objectMapper) {
         this.apiKey = apiKey;
-        this.model = model;
         this.objectMapper = objectMapper;
+        // Built once, and as a URI rather than a template string: passing the
+        // base URL as a template variable would percent-encode "https://" and
+        // leave a relative address that can't be requested.
+        this.endpoint = URI.create(BASE_URL + "/" + model + ":generateContent");
 
         // Generating a full report takes a few seconds, so the read timeout is
         // well above a normal API call's.
@@ -101,7 +106,7 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
 
         try {
             String rawResponse = restClient.post()
-                    .uri("{base}/{model}:generateContent", Map.of("base", BASE_URL, "model", model))
+                    .uri(endpoint)
                     .header("x-goog-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(buildRequest(ingredients))
@@ -111,9 +116,13 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
             return parseReport(rawResponse);
         } catch (ResponseStatusException e) {
             throw e;
+        } catch (RestClientResponseException e) {
+            // When the API itself rejects the call, its own message says why —
+            // far more useful than a stack trace, so it goes on the log line.
+            log.error("Gemini rejected the request: {} {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Couldn't reach the nutrition service. Please try again.", e);
         } catch (Exception e) {
-            // The visitor gets a friendly message; the cause belongs in the log,
-            // where it can actually be acted on.
             log.error("Gemini nutrition analysis failed", e);
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "Couldn't reach the nutrition service. Please try again.", e);
