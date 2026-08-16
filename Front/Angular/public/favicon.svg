@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="FridgeMate">
+  <!-- Solid background so the mark stays legible against both light and dark
+       browser chrome, where a transparent icon would half-disappear. -->
+  <rect width="32" height="32" rx="7" fill="#2f9e6f"/>
+
+  <!-- A fridge, reduced to what still reads at 16px: the body, the freezer
+       divider and two handles. -->
+  <rect x="8.5" y="4" width="15" height="24" rx="2.5" fill="#ffffff"/>
+  <path d="M8.5 12.5h15" stroke="#2f9e6f" stroke-width="1.5"/>
+  <g stroke="#2f9e6f" stroke-width="1.5" stroke-linecap="round">
+    <path d="M11.75 7.5v3"/>
+    <path d="M11.75 15v4"/>
+  </g>
+</svg>
