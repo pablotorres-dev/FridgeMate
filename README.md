@@ -1,5 +1,7 @@
 # 🧊 FridgeMate
 
+[![CI](https://github.com/pablotorres-dev/FridgeMate/actions/workflows/ci.yml/badge.svg)](https://github.com/pablotorres-dev/FridgeMate/actions/workflows/ci.yml)
+
 A full-stack app for keeping track of what's in your fridge, freezer, pantry and bathroom cabinet — and making sure you never run out of the things you actually use.
 
 Built with **Spring Boot** (Java) on the backend and **Angular** on the frontend.

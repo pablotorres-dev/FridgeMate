@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch makes the earlier run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — build & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Java/FridgeCalories
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          # Without this every run re-downloads the whole dependency tree.
+          cache: maven
+
+      - name: Build and run tests
+        run: ./mvnw --batch-mode verify
+
+      # Makes a red build readable without digging through the log.
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: Java/FridgeCalories/target/surefire-reports/
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend — build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Front/Angular
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: Front/Angular/package-lock.json
+
+      - name: Install dependencies
+        # Installs exactly what the lockfile pins, unlike `npm install`.
+        run: npm ci
+
+      # Also enforces the bundle-size budget, so a heavy dependency added
+      # without thought fails here rather than on someone's phone.
+      - name: Build
+        run: npm run build
