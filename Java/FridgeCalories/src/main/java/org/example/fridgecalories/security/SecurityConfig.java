@@ -81,6 +81,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Registering and logging in must work before you have a token.
                         .requestMatchers("/api/auth/**").permitAll()
+                        // The uptime monitor has no account to log in with, and
+                        // the answer carries nothing worth protecting.
+                        .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         // Everything else is the Angular app itself (HTML, JS, CSS,
                         // and its client-side routes), which must load for anyone.
