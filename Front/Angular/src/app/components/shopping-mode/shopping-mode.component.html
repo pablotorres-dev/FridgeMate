@@ -17,6 +17,34 @@
   }
 
   @if (!loading && !error && phase === 'shopping') {
+    @if (receiptAvailable) {
+      <div class="card receipt-card">
+        <div class="receipt-copy">
+          <h2>🧾 Just been shopping?</h2>
+          <p>Photograph the receipt and everything on it drops straight into the cart.</p>
+        </div>
+        <input
+          #receiptInput
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          (change)="onReceiptSelected($event)"
+        />
+        <button type="button" class="primary" [disabled]="scanning" (click)="receiptInput.click()">
+          {{ scanning ? 'Reading receipt...' : 'Scan receipt' }}
+        </button>
+      </div>
+    }
+
+    @if (receiptMessage) {
+      <p class="status success">{{ receiptMessage }}</p>
+    }
+
+    @if (receiptError) {
+      <p class="status error">{{ receiptError }}</p>
+    }
+
     <div class="card list-card">
       <table class="responsive-table">
         <thead>

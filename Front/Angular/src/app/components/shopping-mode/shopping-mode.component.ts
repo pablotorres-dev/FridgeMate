@@ -6,6 +6,7 @@ import { Ingredient } from '../../models/ingredient';
 import { PRODUCT_TYPES, ProductType } from '../../models/product-type';
 import { STORAGE_LOCATIONS, StorageLocation } from '../../models/storage-location';
 import { IngredientService } from '../../services/ingredient.service';
+import { ReceiptService } from '../../services/receipt.service';
 import { ShoppingListService } from '../../services/shopping-list.service';
 
 interface CartItem {
@@ -16,6 +17,9 @@ interface CartItem {
   minQuantity?: number;
   bought: boolean;
   custom: boolean;
+  /** Read off a receipt, and only a guess — the review step confirms it. */
+  suggestedType?: ProductType;
+  suggestedLocation?: StorageLocation;
 }
 
 interface PurchaseDraft {
@@ -48,16 +52,78 @@ export class ShoppingModeComponent implements OnInit {
   newItemUnit = '';
   newItemQuantity = 1;
 
+  receiptAvailable = false;
+  scanning = false;
+  receiptMessage: string | null = null;
+  receiptError: string | null = null;
+
   readonly productTypes = PRODUCT_TYPES;
   readonly storageLocations = STORAGE_LOCATIONS;
 
   constructor(
     private shoppingListService: ShoppingListService,
     private ingredientService: IngredientService,
+    private receiptService: ReceiptService,
   ) {}
 
   ngOnInit(): void {
     this.loadNeeded();
+    // Hide the button rather than offer one that can only fail on a server
+    // with no API key configured.
+    this.receiptService.getStatus().subscribe({
+      next: (status) => (this.receiptAvailable = status.available),
+      error: () => (this.receiptAvailable = false),
+    });
+  }
+
+  /**
+   * A photographed receipt fills the cart in one go. Everything it finds is
+   * marked as bought and removable, because the reading can be wrong and the
+   * user is the one who was actually at the till.
+   */
+  onReceiptSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Cleared so that choosing the same photo again still fires a change.
+    input.value = '';
+    if (!file) {
+      return;
+    }
+
+    this.scanning = true;
+    this.receiptError = null;
+    this.receiptMessage = null;
+
+    this.receiptService.scan(file).subscribe({
+      next: (receipt) => {
+        this.cartItems = [
+          ...this.cartItems,
+          ...receipt.items.map((item) => ({
+            name: item.name,
+            unit: item.unit,
+            quantity: item.quantity,
+            bought: true,
+            custom: true,
+            suggestedType: item.type,
+            suggestedLocation: item.storageLocation,
+          })),
+        ];
+        this.scanning = false;
+        this.receiptMessage =
+          receipt.items.length > 0
+            ? `✓ Added ${receipt.items.length} product${receipt.items.length === 1 ? '' : 's'}${
+                receipt.store ? ' from ' + receipt.store : ''
+              }. Check them before finishing.`
+            : "Couldn't make out any products on that photo. Try again with the whole receipt in frame.";
+      },
+      error: (response) => {
+        this.scanning = false;
+        this.receiptError =
+          response.status === 503
+            ? "Receipt scanning isn't configured on this server."
+            : "Couldn't read that receipt. Try again in better light, with the whole receipt flat and in frame.";
+      },
+    });
   }
 
   loadNeeded(): void {
@@ -133,8 +199,10 @@ export class ShoppingModeComponent implements OnInit {
       name: item.name,
       unit: item.unit,
       quantity: item.quantity,
-      type: previous?.type ?? 'OTHER',
-      storageLocation: previous?.storageLocation ?? 'PANTRY',
+      // What this product was last time beats a guess from a receipt, which in
+      // turn beats a blanket default.
+      type: previous?.type ?? item.suggestedType ?? 'OTHER',
+      storageLocation: previous?.storageLocation ?? item.suggestedLocation ?? 'PANTRY',
       expirationDate: undefined,
     };
   }
