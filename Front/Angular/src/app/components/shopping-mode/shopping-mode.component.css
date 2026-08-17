@@ -92,6 +92,30 @@ tr.bought {
   padding: var(--space-6) var(--space-4);
 }
 
+.receipt-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.receipt-card h2 {
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
+}
+
+.receipt-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.receipt-card button {
+  flex-shrink: 0;
+}
+
 .add-item-card {
   padding: var(--space-4) var(--space-5);
   margin-bottom: var(--space-5);
@@ -134,6 +158,18 @@ tr.bought {
 
   .page-header p {
     font-size: 0.85rem;
+  }
+
+  /* The receipt is scanned standing in the kitchen holding a phone, so the
+     button gets its own full-width row rather than being squeezed beside text. */
+  .receipt-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .receipt-card button {
+    width: 100%;
   }
 
   /* One field per line: three inputs and a button never fit across a phone. */

@@ -32,6 +32,7 @@ FridgeMate started as a simple fridge inventory tracker and grew into a small ho
 - **Shopping list with stock targets** — track products you regularly buy along with the minimum quantity you want to keep in stock.
 - **"What to buy" view** — automatically computed from your current inventory vs. your stock targets, with a one-click "Bought" button that restocks straight into inventory (reusing the last known type/location for that product).
 - **Shopping Mode** — a two-step checkout-style flow for restocking: check off what's in the cart (including impulse buys not on the list) while shopping, then review and assign storage details for everything at once.
+- **Receipt scanning** — photograph a till receipt and the whole shop lands in the cart at once. The abbreviated names printed on the slip are expanded back into readable products, non-product lines (totals, tax, bags, discounts) are dropped, and each item arrives with a suggested type and storage location to confirm.
 - **Filtering & sorting** — filter inventory by storage location, sort by expiration date.
 - **Nutrition analysis** — an AI estimate of the calories, macronutrients and micronutrients your kitchen currently holds, which items supply them, and what it's short on. Results are cached until the inventory changes, so a page refresh costs nothing.
 
@@ -126,6 +127,8 @@ return data belonging to that account.
 | `DELETE` | `/api/shopping-list/{id}` | Stop tracking a product |
 | `GET` | `/api/nutrition` | AI nutrition estimate for the current inventory |
 | `GET` | `/api/nutrition/status` | Whether nutrition analysis is configured |
+| `POST` | `/api/receipt/scan` | Read the products off a photographed till receipt |
+| `GET` | `/api/receipt/status` | Whether receipt scanning is configured |
 
 ## Roadmap
 
