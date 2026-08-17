@@ -16,7 +16,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class GeminiReceiptParserTest {
 
     private GeminiReceiptParser parserWithKey(String key) {
-        return new GeminiReceiptParser(key, "gemini-flash-latest", new ObjectMapper());
+        ObjectMapper mapper = new ObjectMapper();
+        return new GeminiReceiptParser(new GeminiClient(key, "gemini-flash-latest", mapper), mapper);
     }
 
     @Test
@@ -27,14 +28,9 @@ class GeminiReceiptParserTest {
         assertThat(parserWithKey("   ").isAvailable()).isFalse();
     }
 
-    /**
-     * Keys pasted into a hosting dashboard commonly pick up a trailing newline,
-     * which the API rejects as invalid. Trimming turned a confusing failure into
-     * a non-event once already.
-     */
     @Test
     @DisplayName("a key surrounded by whitespace still counts as configured")
-    void tolerAtesWhitespaceAroundTheKey() {
+    void toleratesWhitespaceAroundTheKey() {
         assertThat(parserWithKey("  a-key\n").isAvailable()).isTrue();
     }
 
