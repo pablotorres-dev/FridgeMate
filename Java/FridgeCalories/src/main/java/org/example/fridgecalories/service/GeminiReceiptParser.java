@@ -3,21 +3,11 @@ package org.example.fridgecalories.service;
 import org.example.fridgecalories.model.ParsedReceipt;
 import org.example.fridgecalories.model.ProductType;
 import org.example.fridgecalories.model.StorageLocation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import java.net.URI;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -26,41 +16,19 @@ import java.util.Map;
 @Service
 public class GeminiReceiptParser implements ReceiptParser {
 
-    private static final Logger log = LoggerFactory.getLogger(GeminiReceiptParser.class);
-
-    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
-
-    private final String apiKey;
-    private final URI endpoint;
-    private final RestClient restClient;
+    private final GeminiClient client;
     private final ObjectMapper objectMapper;
     private final Map<String, Object> responseSchema;
 
-    public GeminiReceiptParser(
-            @Value("${app.gemini.api-key:}") String apiKey,
-            @Value("${app.gemini.model:gemini-flash-latest}") String model,
-            ObjectMapper objectMapper) {
-        // Trimmed because a key pasted into a hosting dashboard often carries a
-        // trailing space or newline, which the API rejects as an invalid key.
-        this.apiKey = apiKey == null ? "" : apiKey.trim();
+    public GeminiReceiptParser(GeminiClient client, ObjectMapper objectMapper) {
+        this.client = client;
         this.objectMapper = objectMapper;
-        // Built once, and as a URI rather than a template string: passing the
-        // base URL as a template variable would percent-encode "https://" and
-        // leave a relative address that can't be requested.
-        this.endpoint = URI.create(BASE_URL + "/" + model + ":generateContent");
         this.responseSchema = buildResponseSchema();
-
-        // Reading an image takes longer than a text prompt, and a photo taken on
-        // a phone is a large upload on mobile data.
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(Duration.ofSeconds(10));
-        requestFactory.setReadTimeout(Duration.ofSeconds(90));
-        this.restClient = RestClient.builder().requestFactory(requestFactory).build();
     }
 
     @Override
     public boolean isAvailable() {
-        return !apiKey.isBlank();
+        return client.isConfigured();
     }
 
     @Override
@@ -70,29 +38,8 @@ public class GeminiReceiptParser implements ReceiptParser {
                     "Receipt scanning isn't configured on this server");
         }
 
-        try {
-            String rawResponse = restClient.post()
-                    .uri(endpoint)
-                    .header("x-goog-api-key", apiKey)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(buildRequest(image, mimeType))
-                    .retrieve()
-                    .body(String.class);
-
-            return parseReceipt(rawResponse);
-        } catch (ResponseStatusException e) {
-            throw e;
-        } catch (RestClientResponseException e) {
-            // When the API itself rejects the call, its own message says why —
-            // far more useful than a stack trace, so it goes on the log line.
-            log.error("Gemini rejected the receipt: {} {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "Couldn't read the receipt. Please try again.", e);
-        } catch (Exception e) {
-            log.error("Gemini receipt parsing failed", e);
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "Couldn't read the receipt. Please try again.", e);
-        }
+        String json = client.generateJson(buildRequest(image, mimeType));
+        return objectMapper.readValue(json, ParsedReceipt.class);
     }
 
     /**
@@ -162,10 +109,12 @@ public class GeminiReceiptParser implements ReceiptParser {
             Ignore every line that is not a product being bought: subtotals, totals,
             tax and VAT, payment and change, card and terminal details, store address,
             dates, loyalty points, vouchers, coupons, multibuy and other discounts,
-            deposit refunds, and carrier bags.
+            container deposits whether charged or refunded, and carrier bags.
 
             For each product, also guess:
-            - the product type, from the allowed values;
+            - the product type, from the allowed values. A fruit or vegetable stays
+              a fruit or vegetable even when it is mainly used as an ingredient or
+              in a drink: a lemon is FRUIT, not a beverage;
             - where it is kept at home. Frozen food goes in FREEZER, fresh food that
               needs chilling goes in FRIDGE, toiletries and household goods go in
               BATHROOM, and everything else goes in PANTRY.
@@ -176,15 +125,4 @@ public class GeminiReceiptParser implements ReceiptParser {
             If the shop's name is printed on the receipt, give it. If you cannot
             read the receipt at all, return an empty list of items.
             """;
-
-    /** The model's answer arrives as a JSON string nested inside the API envelope. */
-    private ParsedReceipt parseReceipt(String rawResponse) throws Exception {
-        JsonNode root = objectMapper.readTree(rawResponse);
-        JsonNode text = root.path("candidates").path(0).path("content").path("parts").path(0).path("text");
-        if (text.isMissingNode()) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "The receipt service returned an unexpected response");
-        }
-        return objectMapper.readValue(text.asText(), ParsedReceipt.class);
-    }
 }

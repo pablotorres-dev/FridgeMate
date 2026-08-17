@@ -2,31 +2,17 @@ package org.example.fridgecalories.service;
 
 import org.example.fridgecalories.model.Ingredient;
 import org.example.fridgecalories.model.NutritionReport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import java.net.URI;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
-
-    private static final Logger log = LoggerFactory.getLogger(GeminiNutritionAnalyzer.class);
-
-    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
     /**
      * Asking for a fixed shape means the answer arrives as data to render in
@@ -68,35 +54,17 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
             }
             """;
 
-    private final String apiKey;
-    private final URI endpoint;
-    private final RestClient restClient;
+    private final GeminiClient client;
     private final ObjectMapper objectMapper;
 
-    public GeminiNutritionAnalyzer(
-            @Value("${app.gemini.api-key:}") String apiKey,
-            @Value("${app.gemini.model:gemini-2.0-flash}") String model,
-            ObjectMapper objectMapper) {
-        // Trimmed because a key pasted into a hosting dashboard often carries a
-        // trailing space or newline, which the API rejects as an invalid key.
-        this.apiKey = apiKey == null ? "" : apiKey.trim();
+    public GeminiNutritionAnalyzer(GeminiClient client, ObjectMapper objectMapper) {
+        this.client = client;
         this.objectMapper = objectMapper;
-        // Built once, and as a URI rather than a template string: passing the
-        // base URL as a template variable would percent-encode "https://" and
-        // leave a relative address that can't be requested.
-        this.endpoint = URI.create(BASE_URL + "/" + model + ":generateContent");
-
-        // Generating a full report takes a few seconds, so the read timeout is
-        // well above a normal API call's.
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(Duration.ofSeconds(10));
-        requestFactory.setReadTimeout(Duration.ofSeconds(60));
-        this.restClient = RestClient.builder().requestFactory(requestFactory).build();
     }
 
     @Override
     public boolean isAvailable() {
-        return apiKey != null && !apiKey.isBlank();
+        return client.isConfigured();
     }
 
     @Override
@@ -106,32 +74,11 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
                     "Nutrition analysis isn't configured on this server");
         }
 
-        try {
-            String rawResponse = restClient.post()
-                    .uri(endpoint)
-                    .header("x-goog-api-key", apiKey)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(buildRequest(ingredients))
-                    .retrieve()
-                    .body(String.class);
-
-            return parseReport(rawResponse);
-        } catch (ResponseStatusException e) {
-            throw e;
-        } catch (RestClientResponseException e) {
-            // When the API itself rejects the call, its own message says why —
-            // far more useful than a stack trace, so it goes on the log line.
-            log.error("Gemini rejected the request: {} {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "Couldn't reach the nutrition service. Please try again.", e);
-        } catch (Exception e) {
-            log.error("Gemini nutrition analysis failed", e);
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "Couldn't reach the nutrition service. Please try again.", e);
-        }
+        String json = client.generateJson(buildRequest(ingredients));
+        return objectMapper.readValue(json, NutritionReport.class);
     }
 
-    private Map<String, Object> buildRequest(List<Ingredient> ingredients) throws Exception {
+    private Map<String, Object> buildRequest(List<Ingredient> ingredients) {
         return Map.of(
                 "contents", List.of(Map.of("parts", List.of(Map.of("text", buildPrompt(ingredients))))),
                 "generationConfig", Map.of(
@@ -157,9 +104,15 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
                 listed together, not per item.
 
                 Report the total calories, the main macronutrients, and the notable
-                vitamins and minerals present. For each vitamin or mineral, name the
-                items supplying most of it and rate coverage as LOW, MODERATE or GOOD
-                relative to what one adult would need over a few days.
+                vitamins and minerals present. Cover the twelve most significant
+                vitamins and minerals at most, and name at most four sources for
+                each: a well stocked kitchen otherwise produces an answer too long
+                to finish, and the reader wants the picture rather than the
+                inventory back.
+
+                For each vitamin or mineral, name the items supplying most of it and
+                rate coverage as LOW, MODERATE or GOOD relative to what one adult
+                would need over a few days.
 
                 In "gaps", list nutrients this kitchen covers poorly, and suggest a
                 food that would fix each one.
@@ -176,16 +129,5 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
             return "";
         }
         return value % 1 == 0 ? String.valueOf(value.longValue()) : String.valueOf(value);
-    }
-
-    /** The model's answer arrives as a JSON string nested inside the API envelope. */
-    private NutritionReport parseReport(String rawResponse) throws Exception {
-        JsonNode root = objectMapper.readTree(rawResponse);
-        JsonNode text = root.path("candidates").path(0).path("content").path("parts").path(0).path("text");
-        if (text.isMissingNode()) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "The nutrition service returned an unexpected response");
-        }
-        return objectMapper.readValue(text.asText(), NutritionReport.class);
     }
 }
