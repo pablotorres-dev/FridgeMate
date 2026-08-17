@@ -21,18 +21,20 @@
       <div class="card receipt-card">
         <div class="receipt-copy">
           <h2>🧾 Just been shopping?</h2>
-          <p>Photograph the receipt and everything on it drops straight into the cart.</p>
+          <p>Photograph the receipt, or pick a photo you already took, and everything on it drops straight into the cart.</p>
         </div>
+        <!-- No "capture" attribute on purpose: forcing it opens the camera and
+             skips the gallery, which rules out a receipt photographed earlier.
+             Without it the phone offers both, and the choice stays the user's. -->
         <input
           #receiptInput
           type="file"
           accept="image/*"
-          capture="environment"
           hidden
           (change)="onReceiptSelected($event)"
         />
         <button type="button" class="primary" [disabled]="scanning" (click)="receiptInput.click()">
-          {{ scanning ? 'Reading receipt...' : 'Scan receipt' }}
+          {{ scanning ? 'Reading receipt...' : 'Add receipt' }}
         </button>
       </div>
     }
