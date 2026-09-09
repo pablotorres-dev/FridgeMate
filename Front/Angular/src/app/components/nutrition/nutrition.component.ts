@@ -22,10 +22,19 @@ export class NutritionComponent implements OnInit {
   constructor(private nutritionService: NutritionService) {}
 
   ngOnInit(): void {
-    // Checked up front so the page can explain itself rather than only
-    // failing once someone presses the button.
+    // Checked first so the page can explain itself on a server with no key,
+    // rather than starting work that can only fail.
     this.nutritionService.getStatus().subscribe({
-      next: (status) => (this.available = status.available),
+      next: (status) => {
+        this.available = status.available;
+        if (this.available) {
+          // Opening this page is already the request; asking for a second click
+          // to say so served nobody. It is affordable because the server keeps
+          // the last result until the inventory actually changes, so arriving
+          // here with the same kitchen costs nothing at all.
+          this.analyse();
+        }
+      },
       error: () => (this.available = false),
     });
   }

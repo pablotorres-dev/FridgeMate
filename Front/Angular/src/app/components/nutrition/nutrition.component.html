@@ -4,9 +4,11 @@
       <h1>🥗 Nutrition</h1>
       <p>What your kitchen currently covers, and what it doesn't.</p>
     </div>
+    <!-- The analysis starts on its own now, so this is a refresh rather than
+         the way in. It stays available after a failure, as the way to retry. -->
     @if (available) {
       <button type="button" class="primary" [disabled]="loading" (click)="analyse()">
-        {{ loading ? 'Analysing…' : report ? 'Analyse again' : 'Analyse my kitchen' }}
+        {{ loading ? 'Analysing…' : report ? 'Refresh' : 'Analyse my kitchen' }}
       </button>
     }
   </header>
@@ -31,9 +33,9 @@
     </div>
   }
 
-  <!-- Before the first run this page was a button on an empty screen, which
-       said nothing about what pressing it would produce. -->
-  @if (available && !report && !loading && !error) {
+  <!-- Kept on screen while the first analysis runs, so the wait is spent
+       reading what is coming rather than watching an empty page. -->
+  @if (available && !report && !error) {
     <div class="card intro">
       <h2>What you'll get</h2>
       <ul>
