@@ -43,10 +43,21 @@ public class GeminiClient {
      */
     private static final Set<Integer> RETRYABLE = Set.of(429, 500, 502, 503, 504);
 
-    private static final int MAX_ATTEMPTS = 3;
+    private static final int MAX_ATTEMPTS = 5;
 
-    /** Waited before the 2nd and 3rd attempts. Short enough that someone stays. */
-    private static final List<Duration> BACKOFF = List.of(Duration.ofSeconds(1), Duration.ofSeconds(3));
+    /**
+     * Waited before each attempt after the first, doubling each time: 15 seconds
+     * of patience in total. A capacity spike normally passes inside that.
+     *
+     * <p>Bounded on purpose. Retrying forever would hold a request thread and
+     * leave the visitor watching a spinner with no way to know it is stuck; when
+     * the patience runs out it is better to say the model is busy and let them
+     * decide. The page then retries a few more times on its own, which is the
+     * same persistence without a server thread held open for it.
+     */
+    private static final List<Duration> BACKOFF = List.of(
+            Duration.ofSeconds(1), Duration.ofSeconds(2),
+            Duration.ofSeconds(4), Duration.ofSeconds(8));
 
     private final String apiKey;
     private final URI endpoint;
@@ -129,9 +140,16 @@ public class GeminiClient {
         return RETRYABLE.contains(status.value());
     }
 
-    private ResponseStatusException asFailure(HttpStatusCode status) {
+    /**
+     * A model out of capacity gets its own status, separate from a model that
+     * is actually broken. Both used to arrive as 502, so the page could only
+     * say "something went wrong" for a condition that clears by itself and is
+     * worth waiting out. 429 carries "come back shortly", which is exactly the
+     * situation.
+     */
+    static ResponseStatusException asFailure(HttpStatusCode status) {
         if (isRetryable(status)) {
-            return new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+            return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
                     "The AI service is busy right now. Please try again in a moment.");
         }
         return new ResponseStatusException(HttpStatus.BAD_GATEWAY,

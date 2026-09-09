@@ -52,6 +52,22 @@ class GeminiClientTest {
         assertThat(GeminiClient.isRetryable(HttpStatus.NOT_FOUND)).isFalse();
     }
 
+    /**
+     * A model out of capacity and a model that is broken used to arrive as the
+     * same 502, so the page could only say "something went wrong" for a
+     * condition that clears by itself and is worth waiting out.
+     */
+    @Test
+    @DisplayName("a busy model is reported apart from a broken one, so the page can say so")
+    void separatesBusyFromBroken() {
+        assertThat(GeminiClient.asFailure(HttpStatus.SERVICE_UNAVAILABLE).getStatusCode())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(GeminiClient.asFailure(HttpStatus.TOO_MANY_REQUESTS).getStatusCode())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(GeminiClient.asFailure(HttpStatus.FORBIDDEN).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_GATEWAY);
+    }
+
     @Test
     @DisplayName("the answer is read out of the envelope")
     void extractsTheAnswer() {

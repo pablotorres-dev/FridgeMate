@@ -23,7 +23,11 @@
 
   @if (loading) {
     <div class="card placeholder">
-      <p class="status">Reading through your inventory… this takes a few seconds.</p>
+      @if (busyNotice) {
+        <p class="status busy">{{ busyNotice }}</p>
+      } @else {
+        <p class="status">Reading through your inventory… this takes a few seconds.</p>
+      }
     </div>
   }
 
