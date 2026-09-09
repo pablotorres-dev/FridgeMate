@@ -5,12 +5,30 @@
       <p>Keep track of what's in your fridge, freezer and pantry.</p>
     </div>
     <div class="header-actions">
+      <!-- Scanned here rather than only in Shop, because this is the page you
+           are on when you have just come home with the bags. -->
+      @if (receiptAvailable) {
+        <input
+          #receiptInput
+          type="file"
+          accept="image/*"
+          hidden
+          (change)="onReceiptSelected($event)"
+        />
+        <button type="button" class="secondary" [disabled]="scanning" (click)="receiptInput.click()">
+          {{ scanning ? 'Reading receipt…' : '🧾 Add receipt' }}
+        </button>
+      }
       <button type="button" class="secondary" (click)="openScanner()">📷 Scan barcode</button>
       <button type="button" class="primary" (click)="toggleForm()">
         {{ showForm ? 'Close' : '+ Add ingredient' }}
       </button>
     </div>
   </header>
+
+  @if (receiptMessage) {
+    <p class="status scan-message">{{ receiptMessage }}</p>
+  }
 
   <!-- Deferred so the barcode-decoding library, by far the heaviest dependency,
        is only fetched when the camera is actually opened. -->

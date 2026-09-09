@@ -6,7 +6,9 @@ import { Ingredient } from '../../models/ingredient';
 import { PRODUCT_TYPES, ProductType } from '../../models/product-type';
 import { STORAGE_LOCATIONS, StorageLocation } from '../../models/storage-location';
 import { IngredientService } from '../../services/ingredient.service';
+import { ParsedReceipt } from '../../models/parsed-receipt';
 import { ReceiptService } from '../../services/receipt.service';
+import { ReceiptHandoffService } from '../../services/receipt-handoff.service';
 import { MODEL_BUSY, retryWhenBusy } from '../../services/retry-when-busy';
 import { ShoppingListService } from '../../services/shopping-list.service';
 
@@ -65,16 +67,48 @@ export class ShoppingModeComponent implements OnInit {
     private shoppingListService: ShoppingListService,
     private ingredientService: IngredientService,
     private receiptService: ReceiptService,
+    private receiptHandoff: ReceiptHandoffService,
   ) {}
 
   ngOnInit(): void {
-    this.loadNeeded();
+    // A receipt scanned from the inventory arrives here already read. Someone
+    // holding a receipt has finished shopping, so the checklist would be a
+    // screen to click past: they go straight to assigning storage.
+    const handed = this.receiptHandoff.take();
+    if (handed) {
+      this.cartItems = this.toCartItems(handed);
+      this.receiptMessage = this.describeAdded(handed);
+      this.startReview();
+    } else {
+      this.loadNeeded();
+    }
+
     // Hide the button rather than offer one that can only fail on a server
     // with no API key configured.
     this.receiptService.getStatus().subscribe({
       next: (status) => (this.receiptAvailable = status.available),
       error: () => (this.receiptAvailable = false),
     });
+  }
+
+  /** Everything a receipt names is marked bought and removable: the reading can
+   *  be wrong, and the user is the one who was actually at the till. */
+  private toCartItems(receipt: ParsedReceipt): CartItem[] {
+    return receipt.items.map((item) => ({
+      name: item.name,
+      unit: item.unit,
+      quantity: item.quantity,
+      bought: true,
+      custom: true,
+      suggestedType: item.type,
+      suggestedLocation: item.storageLocation,
+    }));
+  }
+
+  private describeAdded(receipt: ParsedReceipt): string {
+    const count = receipt.items.length;
+    const from = receipt.store ? ' from ' + receipt.store : '';
+    return `✓ Added ${count} product${count === 1 ? '' : 's'}${from}. Check them before finishing.`;
   }
 
   /**
@@ -106,24 +140,11 @@ export class ShoppingModeComponent implements OnInit {
       )
       .subscribe({
         next: (receipt) => {
-          this.cartItems = [
-            ...this.cartItems,
-            ...receipt.items.map((item) => ({
-              name: item.name,
-              unit: item.unit,
-              quantity: item.quantity,
-              bought: true,
-              custom: true,
-              suggestedType: item.type,
-              suggestedLocation: item.storageLocation,
-            })),
-          ];
+          this.cartItems = [...this.cartItems, ...this.toCartItems(receipt)];
           this.scanning = false;
           this.receiptMessage =
             receipt.items.length > 0
-              ? `✓ Added ${receipt.items.length} product${receipt.items.length === 1 ? '' : 's'}${
-                  receipt.store ? ' from ' + receipt.store : ''
-                }. Check them before finishing.`
+              ? this.describeAdded(receipt)
               : "Couldn't make out any products on that photo. Try again with the whole receipt in frame.";
         },
         error: (response) => {

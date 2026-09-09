@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { IngredientFormComponent } from '../ingredient-form/ingredient-form.component';
 import { BarcodeScannerComponent } from '../barcode-scanner/barcode-scanner.component';
@@ -8,6 +9,9 @@ import { STORAGE_LOCATIONS, StorageLocation } from '../../models/storage-locatio
 import { IngredientService } from '../../services/ingredient.service';
 import { ShoppingListService } from '../../services/shopping-list.service';
 import { BarcodeLookupService } from '../../services/barcode-lookup.service';
+import { ReceiptService } from '../../services/receipt.service';
+import { ReceiptHandoffService } from '../../services/receipt-handoff.service';
+import { MODEL_BUSY, retryWhenBusy } from '../../services/retry-when-busy';
 
 @Component({
   selector: 'app-ingredient-list',
@@ -26,6 +30,9 @@ export class IngredientListComponent implements OnInit {
   showScanner = false;
   scanMessage: string | null = null;
   expiringSoon: Ingredient[] = [];
+  receiptAvailable = false;
+  scanning = false;
+  receiptMessage: string | null = null;
 
   readonly storageLocations = STORAGE_LOCATIONS;
 
@@ -36,12 +43,66 @@ export class IngredientListComponent implements OnInit {
     private ingredientService: IngredientService,
     private shoppingListService: ShoppingListService,
     private barcodeLookupService: BarcodeLookupService,
+    private receiptService: ReceiptService,
+    private receiptHandoff: ReceiptHandoffService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.load();
     this.loadTrackedNames();
     this.loadExpiringSoon();
+    // Hide the button rather than offer one that can only fail on a server
+    // with no API key configured.
+    this.receiptService.getStatus().subscribe({
+      next: (status) => (this.receiptAvailable = status.available),
+      error: () => (this.receiptAvailable = false),
+    });
+  }
+
+  /**
+   * The photo is read here, but the products are filed in Shop: assigning type,
+   * storage and expiry to a whole batch is a screen that already exists there,
+   * and a second copy of it would be a second thing to keep working.
+   */
+  onReceiptSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Cleared so that choosing the same photo again still fires a change.
+    input.value = '';
+    if (!file) {
+      return;
+    }
+
+    this.scanning = true;
+    this.receiptMessage = null;
+
+    this.receiptService
+      .scan(file)
+      .pipe(
+        retryWhenBusy((attempt, of) => {
+          this.receiptMessage = `Gemini is busy right now — waiting and trying again (${attempt} of ${of})…`;
+        }),
+      )
+      .subscribe({
+        next: (receipt) => {
+          this.scanning = false;
+          if (receipt.items.length === 0) {
+            this.receiptMessage =
+              "Couldn't make out any products on that photo. Try again with the whole receipt in frame.";
+            return;
+          }
+          this.receiptHandoff.hand(receipt);
+          this.router.navigate(['/shop']);
+        },
+        error: (response) => {
+          this.scanning = false;
+          this.receiptMessage =
+            response.status === MODEL_BUSY
+              ? 'Gemini is busy right now — it does that when demand spikes, and it passes. Try the receipt again in a minute.'
+              : "Couldn't read that receipt. Try again in better light, with the whole receipt flat and in frame.";
+        },
+      });
   }
 
   private loadExpiringSoon(): void {
