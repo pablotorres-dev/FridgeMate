@@ -69,14 +69,14 @@
   <!-- Applied as soon as a choice changes: an extra "Apply" tap is friction on
        a phone, and the list is small enough to refresh instantly. -->
   <div class="filters">
-    <select [(ngModel)]="locationFilter" name="locationFilter" (ngModelChange)="load()">
+    <select [(ngModel)]="locationFilter" name="locationFilter" (ngModelChange)="applyFilters()">
       <option value="">All locations</option>
       @for (location of storageLocations; track location) {
         <option [value]="location">{{ location }}</option>
       }
     </select>
 
-    <select [(ngModel)]="direction" name="direction" (ngModelChange)="load()">
+    <select [(ngModel)]="direction" name="direction" (ngModelChange)="applyFilters()">
       <option value="asc">Expiring soonest first</option>
       <option value="desc">Expiring latest first</option>
     </select>
@@ -104,7 +104,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (ingredient of ingredients; track ingredient.id) {
+          @for (ingredient of visibleIngredients; track ingredient.id) {
             <tr>
               <td class="card-title" data-label="Name">{{ ingredient.name }}</td>
               <td data-label="Quantity">{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</td>
