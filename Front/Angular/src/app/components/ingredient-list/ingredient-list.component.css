@@ -50,6 +50,20 @@
   font-size: 0.9rem;
 }
 
+/* Food already past its date is a different message from food to eat soon,
+   so it reads in the danger colour rather than the warning one. */
+.expired-banner {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-color: #f5c2c2;
+}
+
+.expired-date {
+  color: var(--color-danger);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .expiring-names {
   color: #9a3412;
 }

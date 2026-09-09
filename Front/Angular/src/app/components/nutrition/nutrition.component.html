@@ -27,6 +27,23 @@
     </div>
   }
 
+  <!-- Before the first run this page was a button on an empty screen, which
+       said nothing about what pressing it would produce. -->
+  @if (available && !report && !loading && !error) {
+    <div class="card intro">
+      <h2>What you'll get</h2>
+      <ul>
+        <li><strong>Calories and macronutrients</strong> — roughly what your kitchen holds in total.</li>
+        <li><strong>Vitamins and minerals</strong> — which foods supply each one, rated as low, moderate or good.</li>
+        <li><strong>Gaps</strong> — what you're short on, and a food that would fix it.</li>
+      </ul>
+      <p class="intro-note">
+        Estimates from typical values for these foods, not measurements. The result is
+        kept until your inventory changes, so coming back here costs nothing.
+      </p>
+    </div>
+  }
+
   @if (report && !loading) {
     <div class="card summary-card">
       <p class="summary">{{ report.summary }}</p>
