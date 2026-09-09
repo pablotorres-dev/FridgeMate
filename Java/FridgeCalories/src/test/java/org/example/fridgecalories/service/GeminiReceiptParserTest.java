@@ -17,7 +17,7 @@ class GeminiReceiptParserTest {
 
     private GeminiReceiptParser parserWithKey(String key) {
         ObjectMapper mapper = new ObjectMapper();
-        return new GeminiReceiptParser(new GeminiClient(key, "gemini-flash-latest", mapper), mapper);
+        return new GeminiReceiptParser(new GeminiClient(key, "gemini-flash-latest", "", mapper), mapper);
     }
 
     @Test

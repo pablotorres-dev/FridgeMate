@@ -16,6 +16,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,27 +62,48 @@ public class GeminiClient {
             Duration.ofSeconds(4), Duration.ofSeconds(8));
 
     private final String apiKey;
-    private final URI endpoint;
+    private final List<String> models;
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
     public GeminiClient(
             @Value("${app.gemini.api-key:}") String apiKey,
             @Value("${app.gemini.model:gemini-flash-latest}") String model,
+            @Value("${app.gemini.fallback-models:}") String fallbackModels,
             ObjectMapper objectMapper) {
         // Trimmed because a key pasted into a hosting dashboard often carries a
         // trailing space or newline, which the API rejects as an invalid key.
         this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.objectMapper = objectMapper;
-        // Built once, and as a URI rather than a template string: passing the
-        // base URL as a template variable would percent-encode "https://" and
-        // leave a relative address that can't be requested.
-        this.endpoint = URI.create(BASE_URL + "/" + model + ":generateContent");
+        this.models = modelsToTry(model, fallbackModels);
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(10));
         requestFactory.setReadTimeout(Duration.ofSeconds(90));
         this.restClient = RestClient.builder().requestFactory(requestFactory).build();
+    }
+
+    /** The preferred model first, then any alternatives, in the order given. */
+    private static List<String> modelsToTry(String model, String fallbackModels) {
+        List<String> all = new ArrayList<>();
+        all.add(model.trim());
+        if (fallbackModels != null) {
+            Arrays.stream(fallbackModels.split(","))
+                    .map(String::trim)
+                    .filter(name -> !name.isEmpty())
+                    .filter(name -> !all.contains(name))
+                    .forEach(all::add);
+        }
+        return List.copyOf(all);
+    }
+
+    /**
+     * Built as a URI rather than a template string: passing the base URL as a
+     * template variable would percent-encode "https://" and leave a relative
+     * address that can't be requested.
+     */
+    private static URI endpointFor(String model) {
+        return URI.create(BASE_URL + "/" + model + ":generateContent");
     }
 
     /** False when no key is set, so a feature can report itself off instead of failing. */
@@ -93,7 +116,40 @@ public class GeminiClient {
      * the failure looks temporary.
      */
     public String generateJson(Map<String, Object> requestBody) {
-        RuntimeException lastFailure = null;
+        HttpStatusCode lastStatus = null;
+
+        for (String model : models) {
+            try {
+                return callWithRetries(model, requestBody);
+            } catch (BusyModelException e) {
+                lastStatus = e.status();
+                // Capacity is per model. Once one has said it is full, asking it
+                // a sixth time is worth less than asking a different one, which
+                // is usually not full at the same moment.
+                log.warn("Model {} is out of capacity; falling back to the next one", model);
+            }
+        }
+
+        log.error("Every model configured is out of capacity: {}", models);
+        throw asFailure(lastStatus == null ? HttpStatus.SERVICE_UNAVAILABLE : lastStatus);
+    }
+
+    /** Signals that this model is full, so another one is worth trying. */
+    private static class BusyModelException extends RuntimeException {
+        private final transient HttpStatusCode status;
+
+        BusyModelException(HttpStatusCode status) {
+            super(null, null, false, false);
+            this.status = status;
+        }
+
+        HttpStatusCode status() {
+            return status;
+        }
+    }
+
+    private String callWithRetries(String model, Map<String, Object> requestBody) {
+        URI endpoint = endpointFor(model);
 
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
@@ -107,33 +163,35 @@ public class GeminiClient {
 
                 return extractJson(rawResponse);
             } catch (RestClientResponseException e) {
-                if (!isRetryable(e.getStatusCode()) || attempt == MAX_ATTEMPTS) {
-                    // The API's own message says why, which beats a stack trace.
-                    log.error("Gemini rejected the request on attempt {}: {} {}",
-                            attempt, e.getStatusCode(), e.getResponseBodyAsString());
+                // The API's own message says why, which beats a stack trace.
+                if (!isRetryable(e.getStatusCode())) {
+                    log.error("Gemini rejected the request to {}: {} {}",
+                            model, e.getStatusCode(), e.getResponseBodyAsString());
                     throw asFailure(e.getStatusCode());
                 }
-                log.warn("Gemini returned {} on attempt {} of {}; retrying",
-                        e.getStatusCode(), attempt, MAX_ATTEMPTS);
-                lastFailure = e;
+                if (attempt == MAX_ATTEMPTS) {
+                    log.error("Model {} still refusing after {} attempts: {} {}",
+                            model, attempt, e.getStatusCode(), e.getResponseBodyAsString());
+                    throw new BusyModelException(e.getStatusCode());
+                }
+                log.warn("Model {} returned {} on attempt {} of {}; retrying",
+                        model, e.getStatusCode(), attempt, MAX_ATTEMPTS);
             } catch (ResponseStatusException e) {
                 throw e;
             } catch (Exception e) {
                 if (attempt == MAX_ATTEMPTS) {
-                    log.error("Gemini call failed on attempt {}", attempt, e);
+                    log.error("Call to {} failed on attempt {}", model, attempt, e);
                     throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                             "Couldn't reach the AI service. Please try again.", e);
                 }
-                log.warn("Gemini call failed on attempt {} of {}; retrying", attempt, MAX_ATTEMPTS);
-                lastFailure = new IllegalStateException(e);
+                log.warn("Call to {} failed on attempt {} of {}; retrying", model, attempt, MAX_ATTEMPTS);
             }
 
             pauseBefore(attempt);
         }
 
         // Unreachable: the final attempt always either returns or throws above.
-        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                "Couldn't reach the AI service. Please try again.", lastFailure);
+        throw new BusyModelException(HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     static boolean isRetryable(HttpStatusCode status) {

@@ -16,17 +16,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class GeminiClientTest {
 
-    private final GeminiClient client = new GeminiClient("a-key", "gemini-flash-latest", new ObjectMapper());
+    private final GeminiClient client = new GeminiClient("a-key", "gemini-flash-latest", "", new ObjectMapper());
 
     @Test
     @DisplayName("with no API key the feature reports itself off rather than failing to start")
     void isUnconfiguredWithoutAKey() {
         ObjectMapper mapper = new ObjectMapper();
-        assertThat(new GeminiClient("", "m", mapper).isConfigured()).isFalse();
-        assertThat(new GeminiClient(null, "m", mapper).isConfigured()).isFalse();
-        assertThat(new GeminiClient("   ", "m", mapper).isConfigured()).isFalse();
+        assertThat(new GeminiClient("", "m", "", mapper).isConfigured()).isFalse();
+        assertThat(new GeminiClient(null, "m", "", mapper).isConfigured()).isFalse();
+        assertThat(new GeminiClient("   ", "m", "", mapper).isConfigured()).isFalse();
         // Keys pasted into a hosting dashboard commonly pick up a trailing newline.
-        assertThat(new GeminiClient("  a-key\n", "m", mapper).isConfigured()).isTrue();
+        assertThat(new GeminiClient("  a-key\n", "m", "", mapper).isConfigured()).isTrue();
     }
 
     /**
