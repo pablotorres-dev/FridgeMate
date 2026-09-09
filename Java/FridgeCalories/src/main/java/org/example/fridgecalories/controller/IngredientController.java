@@ -29,6 +29,15 @@ public class IngredientController {
         return service.save(ingredient);
     }
 
+    /**
+     * Files a whole shop in one request. Putting a scanned receipt away was one
+     * call per product, which for an ordinary weekly shop meant twenty-six.
+     */
+    @PostMapping("/batch")
+    public List<Ingredient> createAll(@Valid @RequestBody List<@Valid Ingredient> ingredients) {
+        return service.saveAll(ingredients);
+    }
+
     @PutMapping("/{id}")
     public Ingredient update(@PathVariable Long id, @Valid @RequestBody Ingredient ingredient) {
         return service.update(id, ingredient);

@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
 import { Ingredient } from '../../models/ingredient';
 import { PRODUCT_TYPES, ProductType } from '../../models/product-type';
 import { STORAGE_LOCATIONS, StorageLocation } from '../../models/storage-location';
@@ -262,18 +261,18 @@ export class ShoppingModeComponent implements OnInit {
       return;
     }
     this.saving = true;
-    const requests = this.drafts.map((draft) =>
-      this.ingredientService.create({
-        name: draft.name,
-        quantity: draft.quantity,
-        unit: draft.unit,
-        type: draft.type,
-        storageLocation: draft.storageLocation,
-        expirationDate: draft.expirationDate || undefined,
-      }),
-    );
+    // One request for the whole shop. This used to fire one per product, so a
+    // scanned receipt meant twenty-six round trips to file a single shop.
+    const purchases = this.drafts.map((draft) => ({
+      name: draft.name,
+      quantity: draft.quantity,
+      unit: draft.unit,
+      type: draft.type,
+      storageLocation: draft.storageLocation,
+      expirationDate: draft.expirationDate || undefined,
+    }));
 
-    forkJoin(requests).subscribe({
+    this.ingredientService.createAll(purchases).subscribe({
       next: () => {
         this.savedMessage = `✓ ${this.drafts.length} product${this.drafts.length === 1 ? '' : 's'} added to your inventory.`;
         this.drafts = [];

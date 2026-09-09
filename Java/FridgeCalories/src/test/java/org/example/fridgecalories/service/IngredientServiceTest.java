@@ -176,4 +176,85 @@ class IngredientServiceTest {
         verify(repository).findByUserAndExpirationDateBefore(eq(owner), cutoff.capture());
         assertThat(cutoff.getValue()).isEqualTo(LocalDate.now().plusDays(3));
     }
+    // ---- Filing a whole shop at once ----
+
+    /**
+     * The saving of a scanned receipt. What matters is the query count: one read
+     * of the kitchen however long the receipt is, where the old one-at-a-time
+     * path did a lookup per product.
+     */
+    @Test
+    @DisplayName("a batch reads the kitchen once, whatever its size")
+    void batchReadsTheKitchenOnce() {
+        when(authService.currentUser()).thenReturn(owner);
+        when(repository.findByUser(eq(owner), any(Sort.class))).thenReturn(List.of());
+        when(repository.saveAll(any())).thenAnswer(call -> call.getArgument(0));
+
+        service.saveAll(List.of(
+                ingredient("Milk", 2, "liters", null),
+                ingredient("Rice", 1, "kg", null),
+                ingredient("Eggs", 6, "units", null)));
+
+        verify(repository, times(1)).findByUser(eq(owner), any(Sort.class));
+        verify(repository, times(1)).saveAll(any());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("a batch adds to what is already in the kitchen instead of duplicating it")
+    void batchMergesIntoExistingStock() {
+        Ingredient stocked = ingredient("Milk", 1, "liters", null);
+        when(authService.currentUser()).thenReturn(owner);
+        when(repository.findByUser(eq(owner), any(Sort.class))).thenReturn(List.of(stocked));
+        when(repository.saveAll(any())).thenAnswer(call -> call.getArgument(0));
+
+        service.saveAll(List.of(ingredient("milk", 2, "liters", null)));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Ingredient>> saved = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(saved.capture());
+        assertThat(saved.getValue()).hasSize(1);
+        assertThat(saved.getValue().get(0).getQuantity()).isEqualTo(3.0);
+    }
+
+    /**
+     * A receipt can list the same product twice. Saving one at a time only
+     * handled this because each request saw the result of the one before.
+     */
+    @Test
+    @DisplayName("two identical lines on one receipt merge into each other")
+    void batchMergesLinesWithinItself() {
+        when(authService.currentUser()).thenReturn(owner);
+        when(repository.findByUser(eq(owner), any(Sort.class))).thenReturn(List.of());
+        when(repository.saveAll(any())).thenAnswer(call -> call.getArgument(0));
+
+        service.saveAll(List.of(
+                ingredient("Yoghurt", 4, "pots", null),
+                ingredient("Yoghurt", 2, "pots", null)));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Ingredient>> saved = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(saved.capture());
+        assertThat(saved.getValue()).hasSize(1);
+        assertThat(saved.getValue().get(0).getQuantity()).isEqualTo(6.0);
+    }
+
+    /** The rule that started all of this: two batches with different dates. */
+    @Test
+    @DisplayName("the same food with different dates stays as separate rows")
+    void batchKeepsDifferentExpiryDatesApart() {
+        when(authService.currentUser()).thenReturn(owner);
+        when(repository.findByUser(eq(owner), any(Sort.class))).thenReturn(List.of());
+        when(repository.saveAll(any())).thenAnswer(call -> call.getArgument(0));
+
+        service.saveAll(List.of(
+                ingredient("Milk", 2, "liters", LocalDate.of(2026, 9, 20)),
+                ingredient("Milk", 2, "liters", LocalDate.of(2026, 9, 27))));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Ingredient>> saved = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(saved.capture());
+        assertThat(saved.getValue()).hasSize(2);
+    }
+
 }

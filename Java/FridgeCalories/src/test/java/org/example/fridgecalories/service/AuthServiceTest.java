@@ -9,10 +9,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,4 +102,34 @@ class AuthServiceTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("401");
     }
+    /**
+     * The filter loads and checks the account on the way in, then keeps the row
+     * as the principal. Reading it back here is what removes a second identical
+     * query from every single request — so this asserts the repository is not
+     * touched at all.
+     */
+    @Test
+    @DisplayName("the row the filter already loaded is reused, not queried again")
+    void reusesTheUserLoadedByTheFilter() {
+        User signedIn = existingUser("pablo", "irrelevant");
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(signedIn, null, List.of()));
+
+        try {
+            assertThat(service().currentUser()).isSameAs(signedIn);
+            verifyNoInteractions(repository);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
+    @DisplayName("no session at all is refused")
+    void refusesWithoutASession() {
+        SecurityContextHolder.clearContext();
+
+        assertThatThrownBy(() -> service().currentUser())
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
 }
