@@ -7,6 +7,7 @@ import { PRODUCT_TYPES, ProductType } from '../../models/product-type';
 import { STORAGE_LOCATIONS, StorageLocation } from '../../models/storage-location';
 import { IngredientService } from '../../services/ingredient.service';
 import { ReceiptService } from '../../services/receipt.service';
+import { MODEL_BUSY, retryWhenBusy } from '../../services/retry-when-busy';
 import { ShoppingListService } from '../../services/shopping-list.service';
 
 interface CartItem {
@@ -94,36 +95,56 @@ export class ShoppingModeComponent implements OnInit {
     this.receiptError = null;
     this.receiptMessage = null;
 
-    this.receiptService.scan(file).subscribe({
-      next: (receipt) => {
-        this.cartItems = [
-          ...this.cartItems,
-          ...receipt.items.map((item) => ({
-            name: item.name,
-            unit: item.unit,
-            quantity: item.quantity,
-            bought: true,
-            custom: true,
-            suggestedType: item.type,
-            suggestedLocation: item.storageLocation,
-          })),
-        ];
-        this.scanning = false;
-        this.receiptMessage =
-          receipt.items.length > 0
-            ? `✓ Added ${receipt.items.length} product${receipt.items.length === 1 ? '' : 's'}${
-                receipt.store ? ' from ' + receipt.store : ''
-              }. Check them before finishing.`
-            : "Couldn't make out any products on that photo. Try again with the whole receipt in frame.";
-      },
-      error: (response) => {
-        this.scanning = false;
-        this.receiptError =
-          response.status === 503
-            ? "Receipt scanning isn't configured on this server."
-            : "Couldn't read that receipt. Try again in better light, with the whole receipt flat and in frame.";
-      },
-    });
+    this.receiptService
+      .scan(file)
+      .pipe(
+        // The same model as the nutrition estimate, and it runs out of
+        // capacity the same way. Waited out rather than shown as a failure.
+        retryWhenBusy((attempt, of) => {
+          this.receiptMessage = `Gemini is busy right now — waiting and trying again (${attempt} of ${of})…`;
+        }),
+      )
+      .subscribe({
+        next: (receipt) => {
+          this.cartItems = [
+            ...this.cartItems,
+            ...receipt.items.map((item) => ({
+              name: item.name,
+              unit: item.unit,
+              quantity: item.quantity,
+              bought: true,
+              custom: true,
+              suggestedType: item.type,
+              suggestedLocation: item.storageLocation,
+            })),
+          ];
+          this.scanning = false;
+          this.receiptMessage =
+            receipt.items.length > 0
+              ? `✓ Added ${receipt.items.length} product${receipt.items.length === 1 ? '' : 's'}${
+                  receipt.store ? ' from ' + receipt.store : ''
+                }. Check them before finishing.`
+              : "Couldn't make out any products on that photo. Try again with the whole receipt in frame.";
+        },
+        error: (response) => {
+          this.scanning = false;
+          this.receiptMessage = null;
+          this.receiptError = this.describeScanFailure(response.status);
+        },
+      });
+  }
+
+  private describeScanFailure(status: number): string {
+    switch (status) {
+      case MODEL_BUSY:
+        // Reached only once the server and the page have both run out of
+        // patience, so it names the cause instead of blaming the photo.
+        return 'Gemini is busy right now — it does that when demand spikes, and it passes. Try the receipt again in a minute.';
+      case 503:
+        return "Receipt scanning isn't configured on this server.";
+      default:
+        return "Couldn't read that receipt. Try again in better light, with the whole receipt flat and in frame.";
+    }
   }
 
   loadNeeded(): void {

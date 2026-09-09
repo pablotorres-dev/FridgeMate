@@ -16,17 +16,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class GeminiClientTest {
 
-    private final GeminiClient client = new GeminiClient("a-key", "gemini-flash-latest", new ObjectMapper());
+    private final GeminiClient client = new GeminiClient("a-key", "gemini-flash-latest", "", new ObjectMapper());
 
     @Test
     @DisplayName("with no API key the feature reports itself off rather than failing to start")
     void isUnconfiguredWithoutAKey() {
         ObjectMapper mapper = new ObjectMapper();
-        assertThat(new GeminiClient("", "m", mapper).isConfigured()).isFalse();
-        assertThat(new GeminiClient(null, "m", mapper).isConfigured()).isFalse();
-        assertThat(new GeminiClient("   ", "m", mapper).isConfigured()).isFalse();
+        assertThat(new GeminiClient("", "m", "", mapper).isConfigured()).isFalse();
+        assertThat(new GeminiClient(null, "m", "", mapper).isConfigured()).isFalse();
+        assertThat(new GeminiClient("   ", "m", "", mapper).isConfigured()).isFalse();
         // Keys pasted into a hosting dashboard commonly pick up a trailing newline.
-        assertThat(new GeminiClient("  a-key\n", "m", mapper).isConfigured()).isTrue();
+        assertThat(new GeminiClient("  a-key\n", "m", "", mapper).isConfigured()).isTrue();
     }
 
     /**
@@ -50,6 +50,22 @@ class GeminiClientTest {
         assertThat(GeminiClient.isRetryable(HttpStatus.UNAUTHORIZED)).isFalse();
         assertThat(GeminiClient.isRetryable(HttpStatus.FORBIDDEN)).isFalse();
         assertThat(GeminiClient.isRetryable(HttpStatus.NOT_FOUND)).isFalse();
+    }
+
+    /**
+     * A model out of capacity and a model that is broken used to arrive as the
+     * same 502, so the page could only say "something went wrong" for a
+     * condition that clears by itself and is worth waiting out.
+     */
+    @Test
+    @DisplayName("a busy model is reported apart from a broken one, so the page can say so")
+    void separatesBusyFromBroken() {
+        assertThat(GeminiClient.asFailure(HttpStatus.SERVICE_UNAVAILABLE).getStatusCode())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(GeminiClient.asFailure(HttpStatus.TOO_MANY_REQUESTS).getStatusCode())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(GeminiClient.asFailure(HttpStatus.FORBIDDEN).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_GATEWAY);
     }
 
     @Test
