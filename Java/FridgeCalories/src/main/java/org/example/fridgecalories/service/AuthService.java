@@ -42,7 +42,19 @@ public class AuthService {
     /** The account behind the current request, as established by the token cookie. */
     public User currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getName() == null) {
+        if (authentication == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+
+        // The filter has already loaded and checked this row for this request.
+        // Reading it back out of the context saves an identical query on every
+        // call, which is one per request against a database in another region.
+        if (authentication.getPrincipal() instanceof User user) {
+            return user;
+        }
+
+        // Anything authenticated another way still resolves the long way round.
+        if (authentication.getName() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
         return repository.findByUsernameIgnoreCase(authentication.getName())

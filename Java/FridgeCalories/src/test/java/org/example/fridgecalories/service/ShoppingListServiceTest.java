@@ -6,6 +6,7 @@ import org.example.fridgecalories.repository.ShoppingListItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Sort;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,7 +68,7 @@ class ShoppingListServiceTest {
     void worksOutHowMuchIsMissing() {
         when(authService.currentUser()).thenReturn(owner);
         when(repository.findByUser(owner)).thenReturn(List.of(tracked("Eggs", 12.0)));
-        when(ingredientRepository.findByUserAndNameIgnoreCase(owner, "Eggs"))
+        when(ingredientRepository.findByUser(eq(owner), any(Sort.class)))
                 .thenReturn(List.of(inStock("Eggs", 4)));
 
         List<ShoppingListEntry> needed = service.getNeeded();
@@ -82,7 +84,7 @@ class ShoppingListServiceTest {
     void addsUpEveryBatchOfTheSameProduct() {
         when(authService.currentUser()).thenReturn(owner);
         when(repository.findByUser(owner)).thenReturn(List.of(tracked("Milk", 5.0)));
-        when(ingredientRepository.findByUserAndNameIgnoreCase(owner, "Milk"))
+        when(ingredientRepository.findByUser(eq(owner), any(Sort.class)))
                 .thenReturn(List.of(inStock("Milk", 2), inStock("Milk", 1)));
 
         List<ShoppingListEntry> needed = service.getNeeded();
@@ -96,7 +98,7 @@ class ShoppingListServiceTest {
     void neverAsksToBuyWhenAlreadyStocked() {
         when(authService.currentUser()).thenReturn(owner);
         when(repository.findByUser(owner)).thenReturn(List.of(tracked("Rice", 1.0)));
-        when(ingredientRepository.findByUserAndNameIgnoreCase(owner, "Rice"))
+        when(ingredientRepository.findByUser(eq(owner), any(Sort.class)))
                 .thenReturn(List.of(inStock("Rice", 4)));
 
         assertThat(service.getNeeded().getFirst().quantityToBuy()).isZero();
@@ -109,7 +111,9 @@ class ShoppingListServiceTest {
         when(repository.findByUser(owner)).thenReturn(List.of(tracked("Coffee", null)));
 
         assertThat(service.getNeeded()).isEmpty();
-        verify(ingredientRepository, never()).findByUserAndNameIgnoreCase(any(), any());
+        // The kitchen is read once either way; what matters is that a product
+        // with no target produces no entry at all.
+        verify(repository).findByUser(owner);
     }
 
     @Test

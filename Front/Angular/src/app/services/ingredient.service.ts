@@ -35,6 +35,11 @@ export class IngredientService {
     return this.http.post<Ingredient>(this.baseUrl, ingredient);
   }
 
+  /** Files a whole shop in one request, rather than one request per product. */
+  createAll(ingredients: Ingredient[]): Observable<Ingredient[]> {
+    return this.http.post<Ingredient[]>(`${this.baseUrl}/batch`, ingredients);
+  }
+
   update(id: number, ingredient: Ingredient): Observable<Ingredient> {
     return this.http.put<Ingredient>(`${this.baseUrl}/${id}`, ingredient);
   }

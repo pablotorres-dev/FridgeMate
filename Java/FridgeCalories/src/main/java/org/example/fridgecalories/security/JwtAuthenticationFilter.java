@@ -45,9 +45,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (username != null) {
                     // Confirm the account still exists — a deleted user's token
                     // must stop working even before it expires.
+                    //
+                    // The row is kept as the principal rather than just its name.
+                    // Every service call needs the owner, and looking it up again
+                    // was a second identical query on every single request.
                     userRepository.findByUsernameIgnoreCase(username).ifPresent(user -> {
                         var authentication = new UsernamePasswordAuthenticationToken(
-                                user.getUsername(), null, List.of());
+                                user, null, List.of());
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     });
                 }
