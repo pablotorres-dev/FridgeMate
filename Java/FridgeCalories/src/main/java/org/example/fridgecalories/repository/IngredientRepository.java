@@ -29,4 +29,7 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
             User user, String name, String unit, StorageLocation storageLocation, LocalDate expirationDate);
 
     List<Ingredient> findByUserAndNameIgnoreCase(User user, String name);
+
+    /** Lets the demo account be rebuilt from scratch on start-up. */
+    void deleteByUser(User user);
 }
