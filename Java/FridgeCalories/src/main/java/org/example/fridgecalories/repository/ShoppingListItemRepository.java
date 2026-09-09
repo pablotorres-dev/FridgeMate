@@ -15,4 +15,7 @@ public interface ShoppingListItemRepository extends JpaRepository<ShoppingListIt
     List<ShoppingListItem> findByUser(User user);
 
     Optional<ShoppingListItem> findByIdAndUser(Long id, User user);
+
+    /** Lets the demo account be rebuilt from scratch on start-up. */
+    void deleteByUser(User user);
 }
