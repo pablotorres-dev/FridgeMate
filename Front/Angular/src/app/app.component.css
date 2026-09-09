@@ -99,6 +99,15 @@
 
   /* Four sections rarely fit across a phone, so they centre and wrap onto a
      second line rather than being pushed off the edge. */
+  /* These were 30px tall — the most tapped controls in the app, and well
+     under a comfortable target. The bar grows by roughly 14px, which is a
+     fair price for navigation used one-handed in a supermarket. */
+  .nav-links a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
   .nav-links {
     grid-area: links;
     flex-wrap: wrap;

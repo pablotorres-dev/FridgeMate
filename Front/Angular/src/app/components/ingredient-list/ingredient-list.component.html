@@ -26,10 +26,17 @@
     <p class="status scan-message">{{ scanMessage }}</p>
   }
 
-  @if (expiringSoon.length > 0) {
+  @if (expired.length > 0) {
+    <div class="expiring-banner expired-banner">
+      <span>🗑️ <strong>{{ expired.length }}</strong> item{{ expired.length === 1 ? '' : 's' }} already past {{ expired.length === 1 ? 'its' : 'their' }} date:</span>
+      <span class="expiring-names">{{ namesOf(expired) }}</span>
+    </div>
+  }
+
+  @if (expiringWithin3Days.length > 0) {
     <div class="expiring-banner">
-      <span>⏰ <strong>{{ expiringSoon.length }}</strong> item{{ expiringSoon.length === 1 ? '' : 's' }} expiring within 3 days:</span>
-      <span class="expiring-names">{{ expiringSoonNames }}</span>
+      <span>⏰ <strong>{{ expiringWithin3Days.length }}</strong> item{{ expiringWithin3Days.length === 1 ? '' : 's' }} expiring within 3 days:</span>
+      <span class="expiring-names">{{ namesOf(expiringWithin3Days) }}</span>
     </div>
   }
 
@@ -93,7 +100,13 @@
                   <span class="badge badge-{{ ingredient.storageLocation.toLowerCase() }}">{{ ingredient.storageLocation }}</span>
                 }
               </td>
-              <td data-label="Expires">{{ ingredient.expirationDate || 'No expiration' }}</td>
+              <td data-label="Expires">
+                @if (isExpired(ingredient)) {
+                  <span class="expired-date">{{ ingredient.expirationDate }} · expired</span>
+                } @else {
+                  {{ ingredient.expirationDate || 'No expiration' }}
+                }
+              </td>
               <td class="row-actions">
                 @if (isTracked(ingredient)) {
                   <span class="badge badge-tracked">✓ In shopping list</span>

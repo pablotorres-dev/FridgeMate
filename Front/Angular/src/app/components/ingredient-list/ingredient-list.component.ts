@@ -50,8 +50,32 @@ export class IngredientListComponent implements OnInit {
     });
   }
 
-  get expiringSoonNames(): string {
-    return this.expiringSoon.map((ingredient) => ingredient.name).join(', ');
+  /**
+   * The server answers "expires before three days from now", which is also true
+   * of anything that went off last month. They are split here because food that
+   * is already bad and food to eat tomorrow call for different reactions — and
+   * calling both "expiring soon" quietly hides the first.
+   */
+  get expired(): Ingredient[] {
+    return this.expiringSoon.filter((ingredient) => this.isExpired(ingredient));
+  }
+
+  get expiringWithin3Days(): Ingredient[] {
+    return this.expiringSoon.filter((ingredient) => !this.isExpired(ingredient));
+  }
+
+  /** Dates arrive as YYYY-MM-DD, which compares correctly as plain text. */
+  isExpired(ingredient: Ingredient): boolean {
+    return !!ingredient.expirationDate && ingredient.expirationDate < this.today;
+  }
+
+  /** "en-CA" is ISO-shaped, and local time is what the user means by today. */
+  private get today(): string {
+    return new Date().toLocaleDateString('en-CA');
+  }
+
+  namesOf(ingredients: Ingredient[]): string {
+    return ingredients.map((ingredient) => ingredient.name).join(', ');
   }
 
   private loadTrackedNames(): void {

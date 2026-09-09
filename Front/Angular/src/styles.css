@@ -10,6 +10,7 @@
   --color-primary-soft: #e6f5ee;
   --color-danger: #d64545;
   --color-danger-hover: #b23a3a;
+  --color-danger-soft: #fdf0f0;
   --color-warning: #b45309;
   --color-warning-soft: #fff7ed;
 
@@ -208,6 +209,9 @@ select:focus {
      them thumb-sized without stacking into a tall column. */
   table.responsive-table td.row-actions {
     justify-content: stretch;
+    /* When one label wraps to two lines, the others grow with it rather
+       than leaving a ragged row of different heights. */
+    align-items: stretch;
     flex-wrap: nowrap;
     gap: var(--space-2);
     margin-top: var(--space-2);

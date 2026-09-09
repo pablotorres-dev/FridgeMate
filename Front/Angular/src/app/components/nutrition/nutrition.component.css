@@ -178,3 +178,35 @@ tbody tr:last-child td {
     width: 100%;
   }
 }
+
+/* Shown only before the first analysis, so the page says what the button does
+   instead of being a button on an empty screen. */
+.intro {
+  padding: var(--space-5);
+}
+
+.intro h2 {
+  margin: 0 0 var(--space-3);
+  font-size: 1rem;
+}
+
+.intro ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.intro li strong {
+  color: var(--color-text);
+}
+
+.intro-note {
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
